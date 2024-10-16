@@ -79,7 +79,10 @@ visualizeAutomaton (Automaton states alph transitions initial accepting) = do
     putStrLn $ "Initial state: " ++ show initial
     putStrLn $ "Accepting states: " ++ show accepting
     putStrLn "Transitions:"
-    mapM_ (\((from, char), to) -> putStrLn $ show from ++ " --" ++ [char] ++ "--> " ++ show to) (Map.toList transitions)
+    putStrLn "digraph {"
+    mapM_ (\((from, char), to) -> putStrLn $ "    " ++ show from ++  " -> " ++ show to ++ " [label = \"" ++ [char] ++ "\"]") (Map.toList transitions)
+--    mapM_ (\((from, char), to) -> putStrLn $ show from ++ " --" ++ [char] ++ "--> " ++ show to) (Map.toList transitions)
+    putStrLn "}"
 
 -- Основная функция MAT
 mat :: IO ()

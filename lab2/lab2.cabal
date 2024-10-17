@@ -1,11 +1,14 @@
 name:                lab2
 version:             0.1.0.0
 -- other fields omitted for brevity
+cabal-version:       >=1.10
+build-type:          Simple
 
 library
   hs-source-dirs:      src
   exposed-modules:     AutomatonMinimizer
   build-depends:       base >=4.7 && <5
+                     , containers >= 0.6 && < 1
   default-language:    Haskell2010
 
 test-suite test-suite-name
@@ -13,9 +16,8 @@ test-suite test-suite-name
   hs-source-dirs:      test
   main-is:             Spec.hs
   build-depends:       base >=4.7 && <5
-                     , hspec
+                     , hspec >= 2.7.0
                      , lab2
+                     , containers >= 0.6 && < 1
+  build-tools:         hspec-discover
   default-language:    Haskell2010
-
--- Change this to Simple
-build-type: Simple

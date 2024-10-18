@@ -55,7 +55,7 @@ class LStarAlgorithm:
     def is_consistent(self):
         # theory:
         # we need to check
-        # if rav(s1) = ru(s2) is executed for 
+        # if row(s1) = row(s2) is executed for 
         # all combinations of strings s1,s2, 
         # then raw(s1.a) = raw(s2.a) must be executed for any a
         for s1 in self.S:
@@ -115,7 +115,11 @@ class LStarAlgorithm:
         # b) A={a,b}
         # c) Q0=row(λ)
         # d) F={row(s) | s belongs to S and T(s)=1}
-        return f"Hypothesis based on {self.S} and {self.E}"
+        query_body = {}
+        for s in self.S:
+            for e in self.E:
+                query_body[(s,e)] = self.T.get((s, e), '?')
+        return query_body
 
 # start
 A = {'a', 'b'}

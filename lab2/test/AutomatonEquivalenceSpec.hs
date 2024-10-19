@@ -37,24 +37,24 @@ spec = do
           }
       areAutomataEquivalent dfa1 dfa2 `shouldBe` Right True
 
---    it "returns False with a counterexample for non-equivalent automata" $ do
---      let dfa1 = Automaton {
---            states = [0, 1],
---            alphabet = ['a', 'b'],
---            transitions = Map.fromList [((0, 'a'), 1), ((0, 'b'), 0), ((1, 'a'), 1), ((1, 'b'), 1)],
---            initialState = 0,
---            acceptingStates = [1]
---          }
---          dfa2 = Automaton {
---            states = [0, 1],
---            alphabet = ['a', 'b'],
---            transitions = Map.fromList [((0, 'a'), 1), ((0, 'b'), 0), ((1, 'a'), 1), ((1, 'b'), 0)],
---            initialState = 0,
---            acceptingStates = [1]
---          }
---      case areAutomataEquivalent dfa1 dfa2 of
---        Left counterexample -> counterexample `shouldBe` "ab"
---        Right _ -> expectationFailure "Expected Left, but got Right"
+    it "returns False with a counterexample for non-equivalent automata" $ do
+      let dfa1 = Automaton {
+            states = [0, 1],
+            alphabet = ['a', 'b'],
+            transitions = Map.fromList [((0, 'a'), 1), ((0, 'b'), 0), ((1, 'a'), 1), ((1, 'b'), 1)],
+            initialState = 0,
+            acceptingStates = [1]
+          }
+          dfa2 = Automaton {
+            states = [0, 1],
+            alphabet = ['a', 'b'],
+            transitions = Map.fromList [((0, 'a'), 1), ((0, 'b'), 0), ((1, 'a'), 1), ((1, 'b'), 0)],
+            initialState = 0,
+            acceptingStates = [1]
+          }
+      case areAutomataEquivalent dfa1 dfa2 of
+        Left counterexample -> counterexample `shouldBe` "ab"
+        Right _ -> expectationFailure "Expected Left, but got Right"
 --
 --    it "handles automata with different alphabets" $ do
 --      let dfa1 = Automaton {

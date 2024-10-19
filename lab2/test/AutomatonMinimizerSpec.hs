@@ -35,33 +35,33 @@ spec = do
             acceptingStates = [4]
           }
           expected = Automaton {
-            states = [0, 1, 3, 4],
-            alphabet = ['a', 'b'],
-            transitions = Map.fromList [ ((0, 'a'), 1), ((0, 'b'), 0),
-                                         ((1, 'a'), 1), ((1, 'b'), 3),
-                                         ((3, 'a'), 1), ((3, 'b'), 4),
-                                         ((4, 'a'), 1), ((4, 'b'), 0) ],
+            states = [0,1,3,4],
+            alphabet = "ab",
+            transitions = Map.fromList [((0,'a'),1),((0,'b'),0),
+                                        ((1,'a'),1),((1,'b'),3),
+                                        ((3,'a'),1),((3,'b'),4),
+                                        ((4,'a'),1),((4,'b'),0) ],
             initialState = 0,
             acceptingStates = [4]
           }
       minimizeAutomaton dfa `shouldBe` expected
 
---    it "minimizes a DFA with unreachable states" $ do
---      let dfa = Automaton {
---            states = [0, 1, 2],
---            alphabet = ['a', 'b'],
---            transitions = Map.fromList [((0, 'a'), 1), ((1, 'b'), 0)],  -- No transition to state 2
---            initialState = 0,
---            acceptingStates = [1]
---          }
---          expected = Automaton {
---            states = [0, 1],
---            alphabet = ['a', 'b'],
---            transitions = Map.fromList [((0, 'a'), 1), ((1, 'b'), 0)],
---            initialState = 0,
---            acceptingStates = [1]
---          }
---      minimizeAutomaton dfa `shouldBe` expected
+    it "minimizes a DFA with unreachable states" $ do
+      let dfa = Automaton {
+            states = [0, 1, 2],
+            alphabet = ['a', 'b'],
+            transitions = Map.fromList [((0, 'a'), 1), ((1, 'b'), 0)],  -- No transition to state 2
+            initialState = 0,
+            acceptingStates = [1]
+          }
+          expected = Automaton {
+            states = [0, 1],
+            alphabet = ['a', 'b'],
+            transitions = Map.fromList [((0, 'a'), 1), ((1, 'b'), 0)],
+            initialState = 0,
+            acceptingStates = [1]
+          }
+      minimizeAutomaton dfa `shouldBe` expected
 --
 --    it "minimizes a DFA with equivalent states" $ do
 --      let dfa = Automaton {

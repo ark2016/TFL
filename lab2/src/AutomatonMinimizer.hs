@@ -16,12 +16,34 @@ data Automaton = Automaton
     , acceptingStates :: [Int]
     } deriving (Show, Eq)
 
+-- Function to find all reachable states from the initial state
+reachableStates :: Automaton -> Set.Set Int
+reachableStates automaton = explore (Set.singleton $ initialState automaton) [initialState automaton]
+  where
+    explore visited [] = visited
+    explore visited (current:queue) =
+      let
+        nextStates = [ Map.findWithDefault (-1) (current, a) (transitions automaton)
+                     | a <- alphabet automaton ]
+        newStates = filter (\s -> s /= -1 && not (Set.member s visited)) nextStates
+      in
+        explore (Set.union visited (Set.fromList newStates)) (queue ++ newStates)
+
 -- Function to minimize a DFA using Hopcroft's algorithm
 minimizeAutomaton :: Automaton -> Automaton
 minimizeAutomaton automaton =
     let
+        -- Find reachable states
+        reachable = reachableStates automaton
+
+        -- Filter transitions to only include reachable states
+        filteredTransitions = Map.filterWithKey (\(s, _) _ -> s `Set.member` reachable) (transitions automaton)
+
+        -- Filter accepting states to only include reachable states
+        filteredAcceptingStates = filter (`Set.member` reachable) (acceptingStates automaton)
+
         -- Initial partition of states: accepting and non-accepting
-        initialPartition = [Set.fromList (acceptingStates automaton), Set.fromList (states automaton) Set.\\ Set.fromList (acceptingStates automaton)]
+        initialPartition = [Set.fromList filteredAcceptingStates, reachable Set.\\ Set.fromList filteredAcceptingStates]
 
         -- Function to refine partitions
         refine partitions = foldl' refineStep partitions (alphabet automaton)
@@ -34,7 +56,7 @@ minimizeAutomaton automaton =
                     let
                         -- Group states by the state they transition to on the given symbol
                         transitionsMap = Map.fromListWith Set.union
-                            [ (Map.findWithDefault (-1) (s, symbol) (transitions automaton), Set.singleton s)
+                            [ (Map.findWithDefault (-1) (s, symbol) filteredTransitions, Set.singleton s)
                             | s <- Set.toList block ]
                     in
                         Map.elems transitionsMap
@@ -51,12 +73,12 @@ minimizeAutomaton automaton =
 
         -- Create new minimized transitions
         minimizedTransitions = Map.fromList
-            [ ((stateToRepresentative Map.! s, a), stateToRepresentative Map.! Map.findWithDefault (-1) (s, a) (transitions automaton))
-            | (s, a) <- Map.keys (transitions automaton) ]
+            [ ((stateToRepresentative Map.! s, a), stateToRepresentative Map.! Map.findWithDefault (-1) (s, a) filteredTransitions)
+            | (s, a) <- Map.keys filteredTransitions ]
 
         -- Determine new states and accepting states
         newStates = Set.toList $ Set.fromList $ Map.elems stateToRepresentative
-        newAcceptingStates = Set.toList $ Set.fromList [stateToRepresentative Map.! s | s <- acceptingStates automaton]
+        newAcceptingStates = Set.toList $ Set.fromList [stateToRepresentative Map.! s | s <- filteredAcceptingStates]
     in
         Automaton
             { states = newStates

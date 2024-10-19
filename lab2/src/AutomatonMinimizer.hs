@@ -82,3 +82,25 @@ findIndex p = loop 0
     loop i (x:xs)
         | p x = Just i
         | otherwise = loop (i+1) xs
+
+visualizeAutomaton :: Automaton -> IO ()
+visualizeAutomaton (Automaton states alph transitions initial accepting) = do
+    putStrLn "Automaton:"
+    putStrLn $ "States: " ++ show states
+    putStrLn $ "Alphabet: " ++ show alph
+    putStrLn $ "Initial state: " ++ show initial
+    putStrLn $ "Accepting states: " ++ show accepting
+    putStrLn "Transitions:"
+    putStrLn "digraph {"
+    mapM_ (\((from, char), to) -> putStrLn $ "    " ++ show from ++  " -> " ++ show to ++ " [label = \"" ++ [char] ++ "\"]") (Map.toList transitions)
+--    mapM_ (\((from, char), to) -> putStrLn $ show from ++ " --" ++ [char] ++ "--> " ++ show to) (Map.toList transitions)
+    putStrLn "}"
+
+
+
+
+
+
+
+
+

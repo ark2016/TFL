@@ -6,15 +6,8 @@ module AutomatonMinimizer
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Data.List (foldl')
-
--- Automaton data structure
-data Automaton = Automaton
-    { states :: [Int]
-    , alphabet :: [Char]
-    , transitions :: Map.Map (Int, Char) Int
-    , initialState :: Int
-    , acceptingStates :: [Int]
-    } deriving (Show, Eq)
+import Automaton
+import AutomatonVisualization
 
 -- Function to find all reachable states from the initial state
 reachableStates :: Automaton -> Set.Set Int
@@ -87,26 +80,6 @@ minimizeAutomaton automaton =
             , initialState = stateToRepresentative Map.! initialState automaton
             , acceptingStates = newAcceptingStates
             }
-
-visualizeAutomaton :: Automaton -> IO ()
-visualizeAutomaton (Automaton states alph transitions initial accepting) = do
-   putStrLn "Automaton:"
-   putStrLn $ "States: " ++ show states
-   putStrLn $ "Alphabet: " ++ show alph
-   putStrLn $ "Initial state: " ++ show initial
-   putStrLn $ "Accepting states: " ++ show accepting
-   putStrLn "Transitions:"
-   putStrLn "digraph {"
-   putStrLn $ "  \"start\" [shape=point];"
-   putStrLn $ "  \"start\" -> " ++ show initial ++ ";"
-   mapM_ (\x -> putStrLn $ "  " ++ show x ++ " [shape=doublecircle];") accepting
-   mapM_ (\((from, char), to) -> putStrLn $ "  " ++ show from ++ " -> " ++ show to ++ " [label = \"" ++ [char] ++ "\"]")
-         (Map.toList transitions)
-   putStrLn "}"
-
-
-
-
 
 
 --let dfa = Automaton {states = [0],alphabet = ['a', 'b'],transitions = Map.fromList [],initialState = 0,acceptingStates = [0]}

@@ -12,7 +12,7 @@ data MyDFA state symbol = MyDFA {
 
 -- Function to simulate automaton running
 runDFA :: (Ord state, Eq symbol) => MyDFA state symbol -> [symbol] -> Bool
-runDFA dfa input = 
+runDFA dfa input =
     let
         step state symbol = case transitionFunction dfa state symbol of
             [] -> Nothing -- No transition, might want to handle this case

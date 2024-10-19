@@ -55,20 +55,20 @@ spec = do
       case areAutomataEquivalent dfa1 dfa2 of
         Left counterexample -> counterexample `shouldBe` "ab"
         Right _ -> expectationFailure "Expected Left, but got Right"
---
---    it "handles automata with different alphabets" $ do
---      let dfa1 = Automaton {
---            states = [0, 1],
---            alphabet = ['a', 'b'],
---            transitions = Map.fromList [((0, 'a'), 1), ((0, 'b'), 0), ((1, 'a'), 1), ((1, 'b'), 1)],
---            initialState = 0,
---            acceptingStates = [1]
---          }
---          dfa2 = Automaton {
---            states = [0, 1],
---            alphabet = ['a', 'c'],
---            transitions = Map.fromList [((0, 'a'), 1), ((0, 'c'), 0), ((1, 'a'), 1), ((1, 'c'), 1)],
---            initialState = 0,
---            acceptingStates = [1]
---          }
---      areAutomataEquivalent dfa1 dfa2 `shouldBe` Left "Alphabets are different"
+
+    it "handles automata with different alphabets" $ do
+      let dfa1 = Automaton {
+            states = [0, 1],
+            alphabet = ['a', 'b'],
+            transitions = Map.fromList [((0, 'a'), 1), ((0, 'b'), 0), ((1, 'a'), 1), ((1, 'b'), 1)],
+            initialState = 0,
+            acceptingStates = [1]
+          }
+          dfa2 = Automaton {
+            states = [0, 1],
+            alphabet = ['a', 'c'],
+            transitions = Map.fromList [((0, 'a'), 1), ((0, 'c'), 0), ((1, 'a'), 1), ((1, 'c'), 1)],
+            initialState = 0,
+            acceptingStates = [1]
+          }
+      areAutomataEquivalent dfa1 dfa2 `shouldBe` Left "Alphabets are different"

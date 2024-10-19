@@ -62,7 +62,7 @@ spec = do
       let table = [("epsilon", 0), ("class_1", 1), ("class_1", 0)]
       let automaton = fromEquivalenceTable table
       states automaton `shouldBe` [0, 1, 2]
-      acceptingStates automaton `shouldBe` [1]
+      acceptingStates automaton `shouldBe` [2]
 
     it "creates an automaton with correct structure for a complex table" $ do
       let table = [("epsilon", 0), ("a", 0), ("aa", 1), ("aaa", 0), ("aaaa", 1)]

@@ -10,6 +10,7 @@ library
                      , AutomatonMinimizer
                      , AutomatonEquivalence
                      , AutomatonVisualization
+                     , AutomatonFromEquivalenceTable
 --                     , AutomatonTry
   build-depends:       base >=4.7 && <5
                      , containers >= 0.6 && < 1
@@ -26,4 +27,5 @@ test-suite lab2-test-suite
   build-tool-depends:  hspec-discover:hspec-discover
   other-modules:       AutomatonEquivalenceSpec
                      , AutomatonMinimizerSpec
+                     , AutomatonFromEquivalenceTableSpec
   default-language:    Haskell2010

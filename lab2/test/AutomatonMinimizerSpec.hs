@@ -5,7 +5,8 @@ module AutomatonMinimizerSpec (spec) where
 import Test.Hspec
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import AutomatonMinimizer
+import AutomatonMinimizer (minimizeAutomaton)
+import Automaton (Automaton(..))
 
 -- Test suite for AutomatonMinimizer
 spec :: Spec

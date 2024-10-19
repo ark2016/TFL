@@ -19,9 +19,9 @@ fromEquivalenceTable table =
         classToState = Map.fromList $ zip (map fst table) [0..]
 
         -- Initialize states
-        statesList = Map.elems classToState
+        statesList = [0..length table - 1]
 
-        -- The alphabet is simple, for this example we'll assume it's just ['a'] for simplicity
+        -- Assuming a basic alphabet for simplicity
         alphabetList = ['a']
 
         -- The initial state corresponds to the "epsilon" class
@@ -32,20 +32,14 @@ fromEquivalenceTable table =
         -- Accepting states are those with value 1
         acceptingStatesList = [state | (cls, val) <- table, val == 1, Just state <- [Map.lookup cls classToState]]
 
-        -- Transitions: This part is somewhat arbitrary without more information,
-        -- but we'll assume each class transitions to the next class in the list
-        -- under the alphabet 'a'.
-        transitionsMap = Map.fromList $ concatMap createTransitions (zip (map fst table) [0..])
-
-        createTransitions (cls, stateId) =
-            case Map.lookup cls classToState of
-                Just nextStateId -> [((stateId, 'a'), nextStateId)]
-                Nothing -> []
+        -- Transitions: Create a cyclic transition pattern for demonstration purposes
+        createTransitionIndex idx = (idx, alphabetList !! 0)
+        cyclicTransitions = Map.fromList [((idx, 'a'), (idx + 1) `mod` length statesList) | idx <- statesList]
 
     in Automaton
         { states = statesList
         , alphabet = alphabetList
-        , transitions = transitionsMap
+        , transitions = cyclicTransitions
         , initialState = initialStateId
         , acceptingStates = acceptingStatesList
         }

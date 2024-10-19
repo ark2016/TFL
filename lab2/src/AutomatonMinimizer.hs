@@ -109,7 +109,12 @@ visualizeAutomaton (Automaton states alph transitions initial accepting) = do
 --let dfa = Automaton {states = [0],alphabet = ['a', 'b'],transitions = Map.fromList [],initialState = 0,acceptingStates = [0]}
 --let dfa = Automaton {states = [0, 1, 2, 3, 4],alphabet = ['a', 'b'],transitions = Map.fromList [ ((0, 'a'), 1), ((0, 'b'), 2),((1, 'a'), 1), ((1, 'b'), 3),((2, 'a'), 1), ((2, 'b'), 2),((3, 'a'), 1), ((3, 'b'), 4),((4, 'a'), 1), ((4, 'b'), 2) ],initialState = 0,acceptingStates = [4]}
 --let dfa = Automaton {states = [0, 1, 2],alphabet = ['a', 'b'],transitions = Map.fromList [((0, 'a'), 1), ((1, 'b'), 0)],initialState = 0,acceptingStates = [1]}
+--let dfa = Automaton {states = [0, 1, 2, 3],alphabet = ['a', 'b'],transitions = Map.fromList [ ((0, 'a'), 1), ((0, 'b'), 2),((1, 'a'), 3), ((1, 'b'), 3),((2, 'a'), 3), ((2, 'b'), 3),((3, 'a'), 3), ((3, 'b'), 3) ],initialState = 0,acceptingStates = [3]}
+--let dfa = Automaton {states = [0, 1, 2],alphabet = ['a', 'b'],transitions = Map.fromList [ ((0, 'a'), 1), ((0, 'b'), 2),((1, 'a'), 1), ((1, 'b'), 2),((2, 'a'), 1), ((2, 'b'), 2) ],initialState = 0,acceptingStates = [1]}
 
+
+-- Automaton {states = [0,1,2], alphabet = "ab", transitions = Map.fromList [((0,'a'),1),((0,'b'),2),((1,'a'),2),((1,'b'),2),((2,'a'),2),((2,'b'),2)], initialState = 0, acceptingStates = [2]}
+-- Automaton {states = [0,1,3], alphabet = "ab", transitions = Map.fromList [((0,'a'),1),((0,'b'),1),((1,'a'),3),((1,'b'),3),((3,'a'),3),((3,'b'),3)], initialState = 0, acceptingStates = [3]}
 
 
 

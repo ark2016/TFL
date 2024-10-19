@@ -53,11 +53,7 @@ shuffle xs = do
     newArray :: Int -> [a] -> IO (IOArray Int a)
     newArray n xs = newListArray (1, n) xs
 
--- Проверка принадлежности строки языку автомата
-accepts :: Automaton -> String -> Bool
-accepts (Automaton _ _ transitions initial accepting) input =
-    let finalState = foldl' (\state char -> Map.findWithDefault (-1) (state, char) transitions) initial input
-    in finalState `elem` accepting
+
 
 -- Проверка пересечения двух автоматов (через декартово произведение)
 hasIntersection :: Automaton -> Automaton -> Bool
@@ -182,6 +178,25 @@ handleInclusionQuery :: Automaton -> String -> String
 handleInclusionQuery automaton input =
     if accepts automaton input then "1" else "0"
 
+---- Modified equivalence query handler using minimization
+--handleEquivalenceQuery :: Automaton -> [(String, Bool)] -> String
+--handleEquivalenceQuery automaton classes =
+--    let minimalAutomaton = minimizeAutomaton automaton
+--    in case find (\(input, expected) -> accepts minimalAutomaton input /= expected) classes of
+--        Just (counterexample, _) -> counterexample
+--        Nothing -> "TRUE"
+--
+---- Function to check if a string is accepted by the automaton
+--accepts :: Automaton -> String -> Bool
+--accepts (Automaton _ _ transitions initial accepting) input =
+--    let finalState = foldl' (\state char -> Map.findWithDefault (-1) (state, char) transitions) initial input
+--    in finalState `elem` accepting
+-- Проверка принадлежности строки языку автомата
+accepts :: Automaton -> String -> Bool
+accepts (Automaton _ _ transitions initial accepting) input =
+    let finalState = foldl' (\state char -> Map.findWithDefault (-1) (state, char) transitions) initial input
+    in finalState `elem` accepting
+
 -- Обработка запроса на эквивалентность (упрощенная версия)
 handleEquivalenceQuery :: Automaton -> [(String, Bool)] -> String
 handleEquivalenceQuery automaton classes =
@@ -189,7 +204,56 @@ handleEquivalenceQuery automaton classes =
        Just (counterexample, _) -> counterexample
        Nothing -> "TRUE"
 
+-- Function to minimize a DFA by merging equivalent states
+minimizeAutomaton :: Automaton -> Automaton
+minimizeAutomaton automaton@(Automaton states alphabet transitions initial acceptingStates) =
+    let
+        -- Initial partition separates accepting from non-accepting states
+        initialPartition = [acceptingStates, states \\ acceptingStates]
 
+        -- Refinement function: split a block based on transitions
+        refine :: [[Int]] -> [Int] -> Char -> [[Int]]
+        refine partitions block symbol = concatMap splitBlock partitions
+          where
+            splitBlock b =
+                let (inBlock, notInBlock) = partition (`elem` block) (map (`nextState` symbol) b)
+                in if null inBlock || null notInBlock then [b] else [inBlock, notInBlock]
+
+            nextState state char = Map.findWithDefault (-1) (state, char) transitions
+
+        -- Iteratively refine partitions until stable
+        refinePartitions :: [[Int]] -> [[Int]]
+        refinePartitions partitions =
+            let refined = foldl (\parts symbol -> concatMap (refine parts (concat parts) symbol) alphabet) partitions alphabet
+            in if refined == partitions then partitions else refinePartitions refined
+
+        -- Find the partition block that a state belongs to
+        findBlock :: [[Int]] -> Int -> Int
+        findBlock partitions state = maybe (-1) head (find (elem state) partitions)
+
+        -- Final partitions after refinement
+        finalPartitions = refinePartitions initialPartition
+
+        -- New state mapping based on partitions
+        newStateMapping = Map.fromList [(state, findBlock finalPartitions state) | state <- states]
+
+        -- Transition function for minimized DFA
+        newTransitions = Map.fromList
+            [ ((newStateMapping Map.! state, symbol), newStateMapping Map.! nextState)
+            | ((state, symbol), nextState) <- Map.toList transitions
+            , nextState /= -1
+            ]
+
+        -- New accepting states
+        newAcceptingStates = nub $ map (findBlock finalPartitions) acceptingStates
+
+    in Automaton {
+        states = nub $ Map.elems newStateMapping,
+        alphabet = alphabet,
+        transitions = newTransitions,
+        initialState = newStateMapping Map.! initial,
+        acceptingStates = newAcceptingStates
+    }
 
 -- Выводит информацию об автомате в простом графическом формате (Graphviz/DOT)
 visualizeAutomaton :: Automaton -> IO ()
@@ -225,18 +289,30 @@ mat = do
    forever $ do
        query <- getLine
        case words query of
-           ["CHECK_GRAMMAR", input] -> putStrLn $ if checkGrammar input lexemeAutomata
-                                                  then "GRAMMAR OK"
-                                                  else "GRAMMAR NOT OK"
-           ["INCLUSION", input] -> putStrLn $ handleInclusionQuery randomAutomaton input
-           "EQUIVALENCE" : rest -> do
-               let classes = read (unwords rest) :: [(String, Bool)]
-               putStrLn $ handleEquivalenceQuery randomAutomaton classes
-           ["VISUALIZE"] -> visualizeAutomaton randomAutomaton
-           ["VISUALIZE_LEXEME", lexemeName] -> case Map.lookup (read lexemeName :: Lexeme) lexemeAutomata of
-               Just lexemeAutomaton -> visualizeAutomaton lexemeAutomaton
-               Nothing -> putStrLn "Unknown lexeme"
-           _ -> putStrLn "Unknown query"
+          ["INCLUSION", automatonIndex, input] -> do
+              let automatonList = Map.toList lexemeAutomata
+              if all isDigit automatonIndex && (read automatonIndex :: Int) < length automatonList then do
+                  let (lexeme, automaton) = automatonList !! (read automatonIndex :: Int)
+                  putStrLn $ handleInclusionQuery automaton input
+              else putStrLn "Invalid automaton index"
+
+          ["EQUIVALENCE", automatonIndex, examples] -> do
+              let automatonList = Map.toList lexemeAutomata
+              if all isDigit automatonIndex && (read automatonIndex :: Int) < length automatonList then do
+                  let (lexeme, automaton) = automatonList !! (read automatonIndex :: Int)
+                  let testCases = parseExamples examples
+                  putStrLn $ handleEquivalenceQuery automaton testCases
+              else putStrLn "Invalid automaton index"
+
+          _ -> putStrLn "Unknown query. Use 'INCLUSION <automatonIndex> <input>' or 'EQUIVALENCE <automatonIndex> <examples>'"
+    where
+      parseExamples :: String -> [(String, Bool)]
+      parseExamples = map parseExample . words
+
+      parseExample :: String -> (String, Bool)
+      parseExample s =
+        let (input, result) = break (== ':') s
+        in (input, read result == "True")
 
 main :: IO ()
 main = mat

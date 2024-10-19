@@ -6,30 +6,38 @@ import Data.Array.IO (IOArray, newListArray, readArray, writeArray)
 
 -- Структура для представления автомата
 data Automaton = Automaton {
-    states :: [Int],
-    alphabet :: [Char],
-    transitions :: Map.Map (Int, Char) Int,
-    initialState :: Int,
-    acceptingStates :: [Int]
+    states :: [Int], -- список состояний автомата.
+    alphabet :: [Char], -- алфавит автомата.
+    transitions :: Map.Map (Int, Char) Int, -- отображение переходов, где (Int, Char) — текущий state и входной символ, а Int — следующее состояние.
+    initialState :: Int, -- начальное состояние автомата.
+    acceptingStates :: [Int] -- список финальных состояний.
 } deriving (Show)
 
 -- Генерация случайного автомата
 generateRandomAutomaton :: Int -> [Char] -> IO Automaton
 generateRandomAutomaton maxStates alph = do
-    numStates <- randomRIO (1, maxStates)
+    {-
+    maxStates: максимальное количество состояний
+    alph: алфавит автомата
+    -}
+    numStates <- randomRIO (1, maxStates) --Генерация случайного количества состояний в диапазоне [1, maxStates].
     let states = [0..(numStates-1)]
-    initialState <- randomRIO (0, numStates-1)
-    numAccepting <- randomRIO (1, numStates)
+    initialState <- randomRIO (0, numStates-1) --Выбор случайного начального состояния.
+    numAccepting <- randomRIO (1, numStates) -- Выбор случайного количества финальных состояний и их выборка.
     acceptingStates <- take numAccepting <$> shuffle states
-    transitions <- generateRandomTransitions states alph
+    transitions <- generateRandomTransitions states alph -- Генерация случайных переходов.
     return $ Automaton states alph transitions initialState acceptingStates
 
 -- Генерация случайных переходов
 generateRandomTransitions :: [Int] -> [Char] -> IO (Map.Map (Int, Char) Int)
 generateRandomTransitions states alph = do
-    let pairs = [(s, c) | s <- states, c <- alph]
+    {-
+    states: список состояний.
+    alph: алфавит автомата
+    -}
+    let pairs = [(s, c) | s <- states, c <- alph] -- Генерация всех возможных пар (состояние, символ)
     transitions <- mapM (\p -> do
-        nextState <- randomChoice states
+        nextState <- randomChoice states -- Для каждой пары выбирается случайное следующее состояние
         return (p, nextState)) pairs
     return $ Map.fromList transitions
 
@@ -56,7 +64,7 @@ shuffle xs = do
 accepts :: Automaton -> String -> Bool
 accepts (Automaton _ _ transitions initial accepting) input =
     let finalState = foldl' (\state char -> Map.findWithDefault (-1) (state, char) transitions) initial input
-    in finalState `elem` accepting
+    in finalState `elem` accepting -- Если конечное состояние находится в списке принимающих, возвращает True
 
 -- Обработка запроса на включение
 handleInclusionQuery :: Automaton -> String -> String
@@ -67,10 +75,10 @@ handleInclusionQuery automaton input =
 handleEquivalenceQuery :: Automaton -> [(String, Bool)] -> String
 handleEquivalenceQuery automaton classes =
     case find (\(input, expected) -> accepts automaton input /= expected) classes of
-        Just (counterexample, _) -> counterexample
-        Nothing -> "TRUE"
+        Just (counterexample, _) -> counterexample -- Ищет первую строку, для которой результат не совпадает с ожидаемым
+        Nothing -> "TRUE" -- Если такая строка найдена, возвращает её как контрпример, иначе возвращает "TRUE"
 
--- Визуализация автомата (простой вывод в консоль)
+-- Выводит информацию об автомате в простом графическом формате (Graphviz/DOT)
 visualizeAutomaton :: Automaton -> IO ()
 visualizeAutomaton (Automaton states alph transitions initial accepting) = do
     putStrLn "Automaton:"
@@ -94,10 +102,13 @@ mat = do
     forever $ do
         query <- getLine
         case words query of
+            -- проверяет принадлежность строки языку автомата
             ["INCLUSION", input] -> putStrLn $ handleInclusionQuery automaton input
+            -- проверяет эквивалентность автомата набору классов строк
             "EQUIVALENCE" : rest -> do
                 let classes = read (unwords rest) :: [(String, Bool)]
                 putStrLn $ handleEquivalenceQuery automaton classes
+            -- визуализирует автомат
             ["VISUALIZE"] -> visualizeAutomaton automaton
             _ -> putStrLn "Unknown query"
 

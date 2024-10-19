@@ -12,12 +12,14 @@ import Data.Sequence (Seq(..), (|>))
 
 -- Проверка эквивалентности двух автоматов
 areAutomataEquivalent :: Automaton -> Automaton -> Either String Bool
-areAutomataEquivalent automaton1 automaton2 =
-    let minimized1 = minimizeAutomaton automaton1
-        minimized2 = minimizeAutomaton automaton2
-    in if minimized1 == minimized2
-       then Right True
-       else Left (findCounterexample minimized1 minimized2)
+areAutomataEquivalent automaton1 automaton2
+    | alphabet automaton1 /= alphabet automaton2 = Left "Alphabets are different"
+    | otherwise =
+        let minimized1 = minimizeAutomaton automaton1
+            minimized2 = minimizeAutomaton automaton2
+        in if minimized1 == minimized2
+           then Right True
+           else Left (findCounterexample minimized1 minimized2)
 
 -- Функция поиска контрпримера с использованием BFS
 findCounterexample :: Automaton -> Automaton -> String

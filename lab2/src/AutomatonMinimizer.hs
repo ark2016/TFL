@@ -5,80 +5,107 @@ module AutomatonMinimizer
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Data.List (nub, (\\))
-import Data.Maybe (fromMaybe)
+import Data.List (foldl')
+import Automaton
+import AutomatonVisualization
 
--- Automaton data structure
-data Automaton = Automaton
-    { states :: [Int]
-    , alphabet :: [Char]
-    , transitions :: Map.Map (Int, Char) Int
-    , initialState :: Int
-    , acceptingStates :: [Int]
-    } deriving (Show, Eq)
+-- Function to find all reachable states from the initial state
+reachableStates :: Automaton -> Set.Set Int
+reachableStates automaton = explore (Set.singleton $ initialState automaton) [initialState automaton]
+  where
+    explore visited [] = visited
+    explore visited (current:queue) =
+      let
+        nextStates = [ Map.findWithDefault (-1) (current, a) (transitions automaton)
+                     | a <- alphabet automaton ]
+        newStates = filter (\s -> s /= -1 && not (Set.member s visited)) nextStates
+      in
+        explore (Set.union visited (Set.fromList newStates)) (queue ++ newStates)
 
--- Main function to minimize the automaton
+-- Function to minimize a DFA using Hopcroft's algorithm
 minimizeAutomaton :: Automaton -> Automaton
-minimizeAutomaton aut =
-    let eqClasses = computeEquivalenceClasses aut
-        newStates = [0 .. (length eqClasses - 1)]
-        stateMap = Map.fromList [(s, findClassIndex s eqClasses) | s <- states aut]
-        newTransitions = Map.mapKeys (\(s, c) -> (stateMap Map.! s, c)) $
-                         Map.map (\s -> stateMap Map.! s) (transitions aut)
-        newInitialState = stateMap Map.! initialState aut
-        newAcceptingStates = nub [stateMap Map.! s | s <- acceptingStates aut]
-    in Automaton
-        { states = newStates
-        , alphabet = alphabet aut
-        , transitions = newTransitions
-        , initialState = newInitialState
-        , acceptingStates = newAcceptingStates
-        }
+minimizeAutomaton automaton =
+    let
+        -- Find reachable states
+        reachable = reachableStates automaton
 
--- Compute equivalence classes for minimization
-computeEquivalenceClasses :: Automaton -> [[Int]]
-computeEquivalenceClasses aut =
-    let initial = [acceptingStates aut, states aut \\ acceptingStates aut]
-    in refinePartition aut initial
+        -- Filter transitions to only include reachable states
+        filteredTransitions = Map.filterWithKey (\(s, _) _ -> s `Set.member` reachable) (transitions automaton)
 
--- Refine partition until it stabilizes
-refinePartition :: Automaton -> [[Int]] -> [[Int]]
-refinePartition aut partition
-    | partition == refined = partition
-    | otherwise = refinePartition aut refined
-  where
-    refined = concatMap (refineClass aut partition) partition
+        -- Filter accepting states to only include reachable states
+        filteredAcceptingStates = filter (`Set.member` reachable) (acceptingStates automaton)
 
--- Refine a single equivalence class
-refineClass :: Automaton -> [[Int]] -> [Int] -> [[Int]]
-refineClass aut partition cls =
-    groupBy (\s1 s2 -> all (\a -> findClass (step aut s1 a) partition ==
-                                  findClass (step aut s2 a) partition)
-                           (alphabet aut))
-            cls
+        -- Initial partition of states: accepting and non-accepting
+        initialPartition = [Set.fromList filteredAcceptingStates, reachable Set.\\ Set.fromList filteredAcceptingStates]
 
--- Helper function to find the class of a state
-findClass :: Int -> [[Int]] -> Maybe Int
-findClass s = findIndex (elem s)
+        -- Function to refine partitions
+        refine partitions = foldl' refineStep partitions (alphabet automaton)
 
--- Helper function to find the index of a class containing a state
-findClassIndex :: Int -> [[Int]] -> Int
-findClassIndex s classes = fromMaybe (-1) (findIndex (elem s) classes)
+        -- Refine step for a given symbol
+        refineStep partitions symbol =
+            let
+                -- Split each block using the current symbol
+                splitBlock block =
+                    let
+                        -- Group states by the state they transition to on the given symbol
+                        transitionsMap = Map.fromListWith Set.union
+                            [ (Map.findWithDefault (-1) (s, symbol) filteredTransitions, Set.singleton s)
+                            | s <- Set.toList block ]
+                    in
+                        Map.elems transitionsMap
+            in
+                concatMap splitBlock partitions
 
--- Transition function
-step :: Automaton -> Int -> Char -> Int
-step aut s a = fromMaybe (-1) (Map.lookup (s, a) (transitions aut))
+        -- Repeatedly refine the partition until it stabilizes
+        stablePartition = until (\p -> refine p == p) refine initialPartition
 
--- Helper function: group elements by a predicate
-groupBy :: (a -> a -> Bool) -> [a] -> [[a]]
-groupBy _ [] = []
-groupBy eq (x:xs) = let (ys, zs) = span (eq x) xs in (x:ys) : groupBy eq zs
+        -- Map each state to its representative in the final partition
+        stateToRepresentative = Map.fromList
+            [ (s, Set.findMin block)
+            | block <- stablePartition, s <- Set.toList block ]
 
--- Helper function: find index of first element satisfying a predicate
-findIndex :: (a -> Bool) -> [a] -> Maybe Int
-findIndex p = loop 0
-  where
-    loop _ [] = Nothing
-    loop i (x:xs)
-        | p x = Just i
-        | otherwise = loop (i+1) xs
+        -- Create new minimized transitions
+        minimizedTransitions = Map.fromList
+            [ ((stateToRepresentative Map.! s, a), stateToRepresentative Map.! Map.findWithDefault (-1) (s, a) filteredTransitions)
+            | (s, a) <- Map.keys filteredTransitions ]
+
+        -- Determine new states and accepting states
+        newStates = Set.toList $ Set.fromList $ Map.elems stateToRepresentative
+        newAcceptingStates = Set.toList $ Set.fromList [stateToRepresentative Map.! s | s <- filteredAcceptingStates]
+    in
+        Automaton
+            { states = newStates
+            , alphabet = alphabet automaton
+            , transitions = minimizedTransitions
+            , initialState = stateToRepresentative Map.! initialState automaton
+            , acceptingStates = newAcceptingStates
+            }
+
+
+--let dfa = Automaton {states = [0],alphabet = ['a', 'b'],transitions = Map.fromList [],initialState = 0,acceptingStates = [0]}
+--let dfa = Automaton {states = [0, 1, 2, 3, 4],alphabet = ['a', 'b'],transitions = Map.fromList [ ((0, 'a'), 1), ((0, 'b'), 2),((1, 'a'), 1), ((1, 'b'), 3),((2, 'a'), 1), ((2, 'b'), 2),((3, 'a'), 1), ((3, 'b'), 4),((4, 'a'), 1), ((4, 'b'), 2) ],initialState = 0,acceptingStates = [4]}
+--let dfa = Automaton {states = [0, 1, 2],alphabet = ['a', 'b'],transitions = Map.fromList [((0, 'a'), 1), ((1, 'b'), 0)],initialState = 0,acceptingStates = [1]}
+--let dfa = Automaton {states = [0, 1, 2, 3],alphabet = ['a', 'b'],transitions = Map.fromList [ ((0, 'a'), 1), ((0, 'b'), 2),((1, 'a'), 3), ((1, 'b'), 3),((2, 'a'), 3), ((2, 'b'), 3),((3, 'a'), 3), ((3, 'b'), 3) ],initialState = 0,acceptingStates = [3]}
+--let dfa = Automaton {states = [0, 1, 2],alphabet = ['a', 'b'],transitions = Map.fromList [ ((0, 'a'), 1), ((0, 'b'), 2),((1, 'a'), 1), ((1, 'b'), 2),((2, 'a'), 1), ((2, 'b'), 2) ],initialState = 0,acceptingStates = [1]}
+
+
+-- Automaton {states = [0,1,2], alphabet = "ab", transitions = Map.fromList [((0,'a'),1),((0,'b'),2),((1,'a'),2),((1,'b'),2),((2,'a'),2),((2,'b'),2)], initialState = 0, acceptingStates = [2]}
+-- Automaton {states = [0,1,3], alphabet = "ab", transitions = Map.fromList [((0,'a'),1),((0,'b'),1),((1,'a'),3),((1,'b'),3),((3,'a'),3),((3,'b'),3)], initialState = 0, acceptingStates = [3]}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

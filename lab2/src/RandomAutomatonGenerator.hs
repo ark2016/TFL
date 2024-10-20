@@ -1,121 +1,122 @@
+-- RandomAutomatonGenerator.hs
 module RandomAutomatonGenerator
     ( generateRandomAutomaton
+    , generateVariableAutomaton
+    , generateConstantAutomaton
+    , generateEolAutomaton
+    , generateBlankAutomaton
+    , generateEqualAutomaton
+    , generateSepAutomaton
+    , generateBracketAutomaton
     ) where
 
 import Automaton
 
 import qualified Data.Map as Map
-import System.Random (randomRIO)
-import Control.Monad (filterM)
 
--- Generates a random automaton according to the constraints
-generateRandomAutomaton :: IO Automaton
-generateRandomAutomaton = do
-    -- Randomly choose which lexeme automaton to generate
-    lexemeType <- randomRIO (1, 7) :: IO Int
-    case lexemeType of
-        1 -> generateVariableAutomaton
-        2 -> generateConstantAutomaton
-        3 -> generateEolAutomaton
-        4 -> generateBlankAutomaton
-        5 -> generateEqualAutomaton
-        6 -> generateSepAutomaton
-        7 -> generateBracketAutomaton
-        _ -> generateVariableAutomaton  -- Default case
+-- Generates a random automaton according to a given type
+generateRandomAutomaton :: Int -> Automaton
+generateRandomAutomaton lexemeType = case lexemeType of
+    1 -> generateVariableAutomaton
+    2 -> generateConstantAutomaton
+    3 -> generateEolAutomaton
+    4 -> generateBlankAutomaton
+    5 -> generateEqualAutomaton
+    6 -> generateSepAutomaton
+    7 -> generateBracketAutomaton 1
+    _ -> generateVariableAutomaton  -- Default case
 
--- Generates a random automaton for variables
+-- Generates a simple automaton for variables
 -- Variables: Infinite language over {'a','b','c'}, disjoint from constants
-generateVariableAutomaton :: IO Automaton
-generateVariableAutomaton = generateRandomAutomatonOverAlphabet ['a','b','c']
+generateVariableAutomaton :: Automaton
+generateVariableAutomaton = generateAutomatonOverAlphabet ['a','b','c']
 
--- Generates a random automaton for constants
+-- Generates a simple automaton for constants
 -- Constants: Infinite language over {'0','1','2'}, disjoint from variables
-generateConstantAutomaton :: IO Automaton
-generateConstantAutomaton = generateRandomAutomatonOverAlphabet ['0','1','2']
+generateConstantAutomaton :: Automaton
+generateConstantAutomaton = generateAutomatonOverAlphabet ['0','1','2']
 
--- Helper function to generate a random automaton over a given alphabet
-generateRandomAutomatonOverAlphabet :: [Char] -> IO Automaton
-generateRandomAutomatonOverAlphabet alphabet = do
-    numStates <- randomRIO (2, 5) :: IO Int
-    let states = [0..(numStates - 1)]
-    let initialState = 0
-    -- Exclude initial state from accepting states to ensure non-empty strings
-    let otherStates = tail states
-    acceptingStates <- randomNonEmptySubset otherStates
-    transitions <- generateRandomTransitions states alphabet
-    let automaton = Automaton { states = states
-                              , alphabet = alphabet
-                              , transitions = transitions
-                              , initialState = initialState
-                              , acceptingStates = acceptingStates }
-    return automaton
+-- Helper function to create an automaton over a given alphabet
+generateAutomatonOverAlphabet :: [Char] -> Automaton
+generateAutomatonOverAlphabet alphabet =
+    let states = [0..2]
+        initialState = 0
+        acceptingStates = [1, 2]
+        transitions = Map.fromList
+            [ ((0, head alphabet), 1)
+            , ((1, last alphabet), 2)
+            , ((2, head alphabet), 0)
+            ]
+    in Automaton { states = states
+                 , alphabet = alphabet
+                 , transitions = transitions
+                 , initialState = initialState
+                 , acceptingStates = acceptingStates }
 
--- Generates a random automaton for [eol]
+-- Generates a simple automaton for [eol]
 -- [eol]: Alphabet different from all other lexemes
-generateEolAutomaton :: IO Automaton
-generateEolAutomaton = do
+generateEolAutomaton :: Automaton
+generateEolAutomaton = 
     let states = [0, 1]
-    let alphabet = ['\n']  -- Using newline character for [eol]
-    let transitions = Map.fromList [ ((0, '\n'), 1) ]
-    let initialState = 0
-    let acceptingStates = [1]
-    return Automaton { states = states
-                     , alphabet = alphabet
-                     , transitions = transitions
-                     , initialState = initialState
-                     , acceptingStates = acceptingStates }
+        alphabet = ['\n']  -- Using newline character for [eol]
+        transitions = Map.fromList [ ((0, '\n'), 1) ]
+        initialState = 0
+        acceptingStates = [1]
+    in Automaton { states = states
+                 , alphabet = alphabet
+                 , transitions = transitions
+                 , initialState = initialState
+                 , acceptingStates = acceptingStates }
 
--- Generates a random automaton for [blank]
+-- Generates a simple automaton for [blank]
 -- [blank]: Alphabet different from all other lexemes and from [eol]
-generateBlankAutomaton :: IO Automaton
-generateBlankAutomaton = do
+generateBlankAutomaton :: Automaton
+generateBlankAutomaton = 
     let states = [0, 1]
-    let alphabet = [' ']  -- Using space character for [blank]
-    let transitions = Map.fromList [ ((0, ' '), 1) ]
-    let initialState = 0
-    let acceptingStates = [1]
-    return Automaton { states = states
-                     , alphabet = alphabet
-                     , transitions = transitions
-                     , initialState = initialState
-                     , acceptingStates = acceptingStates }
+        alphabet = [' ']  -- Using space character for [blank]
+        transitions = Map.fromList [ ((0, ' '), 1) ]
+        initialState = 0
+        acceptingStates = [1]
+    in Automaton { states = states
+                 , alphabet = alphabet
+                 , transitions = transitions
+                 , initialState = initialState
+                 , acceptingStates = acceptingStates }
 
--- Generates a random automaton for [equal]
+-- Generates a simple automaton for [equal]
 -- [equal]: Finite language, first and last letters in a different alphabet
-generateEqualAutomaton :: IO Automaton
-generateEqualAutomaton = do
-    let states = [0,1]
-    let alphabet = ['=']  -- Using '=' character for [equal]
-    let transitions = Map.fromList [ ((0,'='),1) ]
-    let initialState = 0
-    let acceptingStates = [1]
-    return Automaton { states = states
-                     , alphabet = alphabet
-                     , transitions = transitions
-                     , initialState = initialState
-                     , acceptingStates = acceptingStates }
+generateEqualAutomaton :: Automaton
+generateEqualAutomaton = 
+    let states = [0, 1]
+        alphabet = ['=']  -- Using '=' character for [equal]
+        transitions = Map.fromList [ ((0, '='), 1) ]
+        initialState = 0
+        acceptingStates = [1]
+    in Automaton { states = states
+                 , alphabet = alphabet
+                 , transitions = transitions
+                 , initialState = initialState
+                 , acceptingStates = acceptingStates }
 
--- Generates a random automaton for [sep]
+-- Generates a simple automaton for [sep]
 -- [sep]: Finite language, first and last letters in a different alphabet
-generateSepAutomaton :: IO Automaton
-generateSepAutomaton = do
-    let states = [0,1]
-    let alphabet = [';']  -- Using ';' character for [sep]
-    let transitions = Map.fromList [ ((0,';'),1) ]
-    let initialState = 0
-    let acceptingStates = [1]
-    return Automaton { states = states
-                     , alphabet = alphabet
-                     , transitions = transitions
-                     , initialState = initialState
-                     , acceptingStates = acceptingStates }
+generateSepAutomaton :: Automaton
+generateSepAutomaton = 
+    let states = [0, 1]
+        alphabet = [';']  -- Using ';' character for [sep]
+        transitions = Map.fromList [ ((0, ';'), 1) ]
+        initialState = 0
+        acceptingStates = [1]
+    in Automaton { states = states
+                 , alphabet = alphabet
+                 , transitions = transitions
+                 , initialState = initialState
+                 , acceptingStates = acceptingStates }
 
--- Generates a random automaton for brackets
+-- Generates a simple automaton for brackets
 -- Brackets have pairwise disjoint languages disjoint from variables/constants
-generateBracketAutomaton :: IO Automaton
-generateBracketAutomaton = do
-    -- Randomly choose a bracket type
-    bracketType <- randomRIO (1, 6) :: IO Int
+generateBracketAutomaton :: Int -> Automaton
+generateBracketAutomaton bracketType = 
     let bracketChar = case bracketType of
             1 -> '{'  -- [lbr-1]
             2 -> '}'  -- [rbr-1]
@@ -124,37 +125,13 @@ generateBracketAutomaton = do
             5 -> '('  -- [lbr-3]
             6 -> ')'  -- [rbr-3]
             _ -> '{'
-    let states = [0,1]
-    let alphabet = [bracketChar]
-    let transitions = Map.fromList [ ((0, bracketChar),1) ]
-    let initialState = 0
-    let acceptingStates = [1]
-    return Automaton { states = states
-                     , alphabet = alphabet
-                     , transitions = transitions
-                     , initialState = initialState
-                     , acceptingStates = acceptingStates }
-
--- Helper function to generate random transitions for an automaton
-generateRandomTransitions :: [Int] -> [Char] -> IO (Map.Map (Int, Char) Int)
-generateRandomTransitions states alphabet = do
-    let statePairs = [(s, c) | s <- states, c <- alphabet]
-    transitionsList <- mapM (\(s, c) -> do
-        nextState <- randomChoice states
-        return ((s, c), nextState)
-        ) statePairs
-    return $ Map.fromList transitionsList
-
--- Helper function to select a random element from a list
-randomChoice :: [a] -> IO a
-randomChoice xs = do
-    idx <- randomRIO (0, length xs - 1)
-    return (xs !! idx)
-
--- Helper function to generate a random non-empty subset of a list
-randomNonEmptySubset :: [a] -> IO [a]
-randomNonEmptySubset xs = do
-    subset <- filterM (\_ -> randomRIO (False, True)) xs
-    if null subset
-        then randomNonEmptySubset xs
-        else return subset
+        states = [0, 1]
+        alphabet = [bracketChar]
+        transitions = Map.fromList [ ((0, bracketChar), 1) ]
+        initialState = 0
+        acceptingStates = [1]
+    in Automaton { states = states
+                 , alphabet = alphabet
+                 , transitions = transitions
+                 , initialState = initialState
+                 , acceptingStates = acceptingStates }

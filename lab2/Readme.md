@@ -1,27 +1,17 @@
 # БЫСТРЫЙ СТАРТ
-## МАТ
-```bash
-cd src
-```
-```bash
-ghci MAT.hs
-```
-в `ghci` запускаем функцию `main`
-```ghci
-main
-```
 
-## Тесты
-так собирать тесты
-```bash
-cd lab2
-```
+убедитесь, что находитесь в директории `lab2`
 ```bash
 cabal clean
 ```
 ```bash
 cabal build
 ```
+После для запуска MAT
+```bash
+cabal run 
+```
+Для запуска тестов
 ```bash
 cabal test
 ```

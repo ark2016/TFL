@@ -1,5 +1,5 @@
 -- Main module that ties together the functionalities
-module MAT where
+module Main where
 
 import Automaton (Automaton(..))
 import RandomAutomatonGenerator (generateRandomAutomaton)
@@ -13,7 +13,7 @@ import System.IO (hFlush, stdout)
 main :: IO ()
 main = do
     putStrLn "Generating a random automaton..."
-    let automaton = generateRandomAutomaton 5  -- You can change the size parameter as needed
+    let automaton = generateRandomAutomaton 1  -- You can change the size parameter as needed
     putStrLn "Automaton generated."
     mainLoop automaton
 

@@ -7,7 +7,7 @@ import Automaton (Automaton(..))
 isStringAccepted :: Automaton -> String -> Int
 isStringAccepted automaton input =
     let finalState = foldl (transition automaton) (initialState automaton) input
-    in if finalState `elem` (acceptingStates automaton)
+    in if finalState `elem` (acceptingStates automaton) && finalState /= -1
        then 1
        else 0
 
@@ -16,4 +16,4 @@ transition :: Automaton -> Int -> Char -> Int
 transition automaton currentState char =
     case Map.lookup (currentState, char) (transitions automaton) of
         Just nextState -> nextState
-        Nothing -> currentState  -- If no valid transition, stay in the current state (or handle as needed)
+        Nothing -> -1  -- Use -1 as an invalid state to represent a lack of transition

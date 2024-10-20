@@ -40,15 +40,15 @@ spec = do
           }
       isStringAccepted dfa "aab" `shouldBe` 1
 
---    it "returns 0 for an invalid string (missing transitions)" $ do
---      let dfa = Automaton {
---            states = [0, 1],
---            alphabet = ['a'],
---            transitions = Map.fromList [((0, 'a'), 1)],
---            initialState = 0,
---            acceptingStates = [1]
---          }
---      isStringAccepted dfa "ab" `shouldBe` 0  -- No transition for 'b'
+    it "returns 0 for an invalid string (missing transitions)" $ do
+      let dfa = Automaton {
+            states = [0, 1],
+            alphabet = ['a'],
+            transitions = Map.fromList [((0, 'a'), 1)],
+            initialState = 0,
+            acceptingStates = [1]
+          }
+      isStringAccepted dfa "ab" `shouldBe` 0  -- No transition for 'b'
 
     it "returns 0 for an empty string when the initial state is not accepting" $ do
       let dfa = Automaton {

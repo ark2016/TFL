@@ -56,7 +56,7 @@ generateAutomatonOverAlphabet alphabet =
 -- Generates a simple automaton for [eol]
 -- [eol]: Alphabet different from all other lexemes
 generateEolAutomaton :: Automaton
-generateEolAutomaton = 
+generateEolAutomaton =
     let states = [0, 1]
         alphabet = ['\n']  -- Using newline character for [eol]
         transitions = Map.fromList [ ((0, '\n'), 1) ]
@@ -71,7 +71,7 @@ generateEolAutomaton =
 -- Generates a simple automaton for [blank]
 -- [blank]: Alphabet different from all other lexemes and from [eol]
 generateBlankAutomaton :: Automaton
-generateBlankAutomaton = 
+generateBlankAutomaton =
     let states = [0, 1]
         alphabet = [' ']  -- Using space character for [blank]
         transitions = Map.fromList [ ((0, ' '), 1) ]
@@ -86,7 +86,7 @@ generateBlankAutomaton =
 -- Generates a simple automaton for [equal]
 -- [equal]: Finite language, first and last letters in a different alphabet
 generateEqualAutomaton :: Automaton
-generateEqualAutomaton = 
+generateEqualAutomaton =
     let states = [0, 1]
         alphabet = ['=']  -- Using '=' character for [equal]
         transitions = Map.fromList [ ((0, '='), 1) ]
@@ -101,7 +101,7 @@ generateEqualAutomaton =
 -- Generates a simple automaton for [sep]
 -- [sep]: Finite language, first and last letters in a different alphabet
 generateSepAutomaton :: Automaton
-generateSepAutomaton = 
+generateSepAutomaton =
     let states = [0, 1]
         alphabet = [';']  -- Using ';' character for [sep]
         transitions = Map.fromList [ ((0, ';'), 1) ]
@@ -116,7 +116,7 @@ generateSepAutomaton =
 -- Generates a simple automaton for brackets
 -- Brackets have pairwise disjoint languages disjoint from variables/constants
 generateBracketAutomaton :: Int -> Automaton
-generateBracketAutomaton bracketType = 
+generateBracketAutomaton bracketType =
     let bracketChar = case bracketType of
             1 -> '{'  -- [lbr-1]
             2 -> '}'  -- [rbr-1]

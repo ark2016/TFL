@@ -1,5 +1,17 @@
 # БЫСТРЫЙ СТАРТ
+## МАТ
+```bash
+cd src
+```
+```bash
+ghci MAT.hs
+```
+в `ghci` запускаем функцию `main`
+```ghci
+main
+```
 
+## Тесты
 так собирать тесты
 ```bash
 cd lab2
@@ -12,11 +24,4 @@ cabal build
 ```
 ```bash
 cabal test
-```
-так можно посмотреть демоверсию MAT, хорошо работает визуализация)
-```bash
-ghc MAT_v1.hs
-```
-```bash
-./MAT_v1
 ```

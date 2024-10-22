@@ -68,12 +68,12 @@ class LStarAlgorithm:
         # returning the raw from observation table (default = '?')
         return tuple(self.T.get((s, e), '?') for e in self.E)
 
-    def extend_table(self):
-        # Обновляем таблицу запросов членства для всех элементов (S ∪ S ⋅ A) ⋅ E
+    def extend_table(self):  
         for s in self.S:
             for a in self.A:
                 for e in self.E:
-                    self.T[(s + a, e)] = self.membership_query(s + a + e)
+                    if (s + a, e) not in self.T:
+                        self.T[(s + a, e)] = self.membership_query(s + a + e)
 
     def run(self):
         while True:

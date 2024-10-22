@@ -109,17 +109,11 @@ class LStarAlgorithm:
                 self.extend_table()
 
     def build_hypothesis(self):
-        # need to do something like (need check MAT format):
-        # Procedure to make DFA D(Q,A,Q0,delta,F)from observation table M(S,E,T).
-        # a) Q={row(s) | s belongs to S}
-        # b) A={a,b}
-        # c) Q0=row(λ)
-        # d) F={row(s) | s belongs to S and T(s)=1}
-        query_body = {}
+        equivalence_classes = []
         for s in self.S:
-            for e in self.E:
-                query_body[(s,e)] = self.T.get((s, e), '?')
-        return query_body
+            state = self.T.get(s, '')
+            equivalence_classes.append((s, state))
+        return equivalence_classes
 
 # start
 A = {'a', 'b'}

@@ -53,13 +53,10 @@ class LStarAlgorithm:
         return True, None, None
 
     def is_consistent(self):
-        # theory:
-        # we need to check
-        # if row(s1) = row(s2) is executed for 
-        # all combinations of strings s1,s2, 
-        # then raw(s1.a) = raw(s2.a) must be executed for any a
-        for s1 in self.S:
-            for s2 in self.S:
+        S_list = list(self.S) 
+        for i in range(len(S_list)):  
+            for j in range(i + 1, len(S_list)):
+                s1, s2 = S_list[i], S_list[j]
                 if self.get_row(s1) == self.get_row(s2):
                     for a in self.A:
                         for e in self.E:

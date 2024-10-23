@@ -1,3 +1,5 @@
+--| Этот модуль предоставляет функциональность для минимизации детерминированных конечных автоматов (ДКА)
+--с использованием алгоритма Хопкрофта.
 module AutomatonMinimizer
     ( Automaton(..)
     , minimizeAutomaton
@@ -9,7 +11,13 @@ import Data.List (foldl')
 import Automaton
 import AutomatonVisualization
 
--- Function to find all reachable states from the initial state
+{-|
+Находит все достижимые состояния из начального состояния автомата.
+
+@
+reachableStates :: Automaton -> Set.Set Int
+@
+-}
 reachableStates :: Automaton -> Set.Set Int
 reachableStates automaton = explore (Set.singleton $ initialState automaton) [initialState automaton]
   where
@@ -22,7 +30,21 @@ reachableStates automaton = explore (Set.singleton $ initialState automaton) [in
       in
         explore (Set.union visited (Set.fromList newStates)) (queue ++ newStates)
 
--- Function to minimize a DFA using Hopcroft's algorithm
+{-|
+Минимизирует ДКА с использованием алгоритма Хопкрофта.
+
+@
+minimizeAutomaton :: Automaton -> Automaton
+@
+
+Этапы минимизации:
+1. Находит достижимые состояния.
+2. Фильтрует переходы и принимающие состояния, оставляя только достижимые.
+3. Создает начальное разбиение состояний на принимающие и непринимающие.
+4. Итеративно уточняет разбиение, пока оно не стабилизируется.
+5. Создает новый минимизированный автомат на основе финального разбиения.
+
+-}
 minimizeAutomaton :: Automaton -> Automaton
 minimizeAutomaton automaton =
     let
@@ -82,15 +104,28 @@ minimizeAutomaton automaton =
             }
 
 
---let dfa = Automaton {states = [0],alphabet = ['a', 'b'],transitions = Map.fromList [],initialState = 0,acceptingStates = [0]}
---let dfa = Automaton {states = [0, 1, 2, 3, 4],alphabet = ['a', 'b'],transitions = Map.fromList [ ((0, 'a'), 1), ((0, 'b'), 2),((1, 'a'), 1), ((1, 'b'), 3),((2, 'a'), 1), ((2, 'b'), 2),((3, 'a'), 1), ((3, 'b'), 4),((4, 'a'), 1), ((4, 'b'), 2) ],initialState = 0,acceptingStates = [4]}
---let dfa = Automaton {states = [0, 1, 2],alphabet = ['a', 'b'],transitions = Map.fromList [((0, 'a'), 1), ((1, 'b'), 0)],initialState = 0,acceptingStates = [1]}
---let dfa = Automaton {states = [0, 1, 2, 3],alphabet = ['a', 'b'],transitions = Map.fromList [ ((0, 'a'), 1), ((0, 'b'), 2),((1, 'a'), 3), ((1, 'b'), 3),((2, 'a'), 3), ((2, 'b'), 3),((3, 'a'), 3), ((3, 'b'), 3) ],initialState = 0,acceptingStates = [3]}
---let dfa = Automaton {states = [0, 1, 2],alphabet = ['a', 'b'],transitions = Map.fromList [ ((0, 'a'), 1), ((0, 'b'), 2),((1, 'a'), 1), ((1, 'b'), 2),((2, 'a'), 1), ((2, 'b'), 2) ],initialState = 0,acceptingStates = [1]}
+{-|
+Примеры использования:
 
+1. Минимизация простого ДКА:
+@
+let dfa = Automaton {states = [0, 1, 2], alphabet = ['a', 'b'], transitions = Map.fromList [((0, 'a'), 1), ((1, 'b'), 0)], initialState = 0, acceptingStates = [1]}
+let minimizedDfa = minimizeAutomaton dfa
+@
 
--- Automaton {states = [0,1,2], alphabet = "ab", transitions = Map.fromList [((0,'a'),1),((0,'b'),2),((1,'a'),2),((1,'b'),2),((2,'a'),2),((2,'b'),2)], initialState = 0, acceptingStates = [2]}
--- Automaton {states = [0,1,3], alphabet = "ab", transitions = Map.fromList [((0,'a'),1),((0,'b'),1),((1,'a'),3),((1,'b'),3),((3,'a'),3),((3,'b'),3)], initialState = 0, acceptingStates = [3]}
+2. Минимизация более сложного ДКА:
+@
+let dfa = Automaton {states = [0, 1, 2, 3, 4], alphabet = ['a', 'b'], transitions = Map.fromList [ ((0, 'a'), 1), ((0, 'b'), 2), ((1, 'a'), 1), ((1, 'b'), 3), ((2, 'a'), 1), ((2, 'b'), 2), ((3, 'a'), 1), ((3, 'b'), 4), ((4, 'a'), 1), ((4, 'b'), 2) ], initialState = 0, acceptingStates = [4]}
+let minimizedDfa = minimizeAutomaton dfa
+@
+
+3. Минимизация ДКА с недостижимыми состояниями:
+@
+let dfa = Automaton {states = [0, 1, 2, 3], alphabet = ['a', 'b'], transitions = Map.fromList [ ((0, 'a'), 1), ((0, 'b'), 2), ((1, 'a'), 3), ((1, 'b'), 3), ((2, 'a'), 3), ((2, 'b'), 3), ((3, 'a'), 3), ((3, 'b'), 3) ], initialState = 0, acceptingStates = [3]}
+let minimizedDfa = minimizeAutomaton dfa
+@
+
+-}
 
 
 

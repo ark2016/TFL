@@ -1,9 +1,8 @@
+module AutomatonInclusion where
 {-|
 Этот модуль предоставляет функциональность для симуляции работы детерминированного
 конечного автомата (ДКА) на заданной входной строке.
 -}
-module AutomatonInclusion where
-
 import qualified Data.Map as Map
 import Automaton (Automaton(..))
 

@@ -1,10 +1,9 @@
---| Этот модуль предоставляет функциональность для минимизации детерминированных конечных автоматов (ДКА)
---с использованием алгоритма Хопкрофта.
 module AutomatonMinimizer
     ( Automaton(..)
     , minimizeAutomaton
     ) where
-
+-- Этот модуль предоставляет функциональность для минимизации детерминированных конечных автоматов (ДКА)
+--с использованием алгоритма Хопкрофта.
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Data.List (foldl')

@@ -1,9 +1,8 @@
+module AutomatonFromEquivalenceTable (fromEquivalenceTable) where
 {-|
 Этот модуль предоставляет функциональность для преобразования таблицы классов
 эквивалентности в представление автомата.
 -}
-module AutomatonFromEquivalenceTable (fromEquivalenceTable) where
-
 import qualified Data.Map as Map
 import Automaton (Automaton(..))
 import Data.List (nub)

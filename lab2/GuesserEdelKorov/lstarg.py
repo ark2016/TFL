@@ -1,25 +1,11 @@
 from random import randint
-
-def membership_query_fn(word):
-    #  Code for membership querry
-    return randint(0,2)
-
-def equivalence_query_fn(hypothesis):
-    # Code for equivalence query
-
-    equal, counterexample = True, ""  # Here you need to recive the answer from MAT
-    if not equal :
-        # if it is equal
-        return True, None
-    else:
-        return False, "ababa"  # returning the conterexample
+from MAT.mat import MAT
 
 # Class of SIMPLE L* Algorithm (TEST VERSION)
 class LStarAlgorithm:
-    def __init__(self, A, membership_query_fn, equivalence_query_fn):
+    def __init__(self, A, mat_instance):
         self.A = A  # alphabet
-        self.membership_query = membership_query_fn  # membership querry
-        self.equivalence_query = equivalence_query_fn  # equivalence query
+        self.mat = mat_instance
         
         self.S = {''}  # the set S is initialized as λ
         self.E = {''}  # the set E is initialized as λ
@@ -35,7 +21,7 @@ class LStarAlgorithm:
         # where f is result {0,1} of membership query
         for s in self.S:
             for e in self.E:
-                self.T[(s, e)] = self.membership_query(s + e)
+                self.T[(s, e)] = self.mat.membership_query(s + e)
 
     # checking for closeness
     def is_closed(self):
@@ -73,7 +59,7 @@ class LStarAlgorithm:
             for a in self.A:
                 for e in self.E:
                     if (s + a, e) not in self.T:
-                        self.T[(s + a, e)] = self.membership_query(s + a + e)
+                        self.T[(s + a, e)] = self.mat.membership_query(s + a + e)
 
     def run(self):
         while True:
@@ -95,7 +81,7 @@ class LStarAlgorithm:
 
             # Шаг 3: equal query
             hypothesis = self.build_hypothesis()
-            equivalent, counterexample = self.equivalence_query(hypothesis)
+            equivalent, counterexample = self.mat.equivalence_query(hypothesis)
             if equivalent:
                 print("Алгоритм завершен. Модель правильна.")
                 return hypothesis
@@ -113,6 +99,14 @@ class LStarAlgorithm:
         return equivalence_classes
 
 # start
-A = {'a', 'b'}
-l_star = LStarAlgorithm(A, membership_query_fn, equivalence_query_fn)
+path_to_mat = r'C:\\Users\\a.korovkin\\TFL\\lab2\\mat.exe'
+
+mat_instance = MAT(path_to_mat)
+
+A = {'a', 'b', 'c', '0', '1', '2'}
+l_star = LStarAlgorithm(A, mat_instance)
+
 final_hypothesis = l_star.run()
+print("Гипотеза:", final_hypothesis)
+
+mat_instance.close()

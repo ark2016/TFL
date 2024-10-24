@@ -28,7 +28,13 @@ class MAT:
             self.process.stdin.write(command)
             self.process.stdin.flush()
             result = self.process.stdout.readline().strip()
-            return result
+            if result == "1":
+                return True
+            elif result == "0":
+                return False
+            else:
+                print(f"Ошибка: неожиданный ответ от MAT: {result}")
+                raise ValueError(f"Некорректный ответ от MAT: {result}")
         except Exception as e:
             print(f"Ошибка при выполнении запроса: {e}") 
 

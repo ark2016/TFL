@@ -61,11 +61,11 @@ checkStringInclusion automaton = do
 -- Function to check if another automaton is equivalent to the generated one
 checkAutomatonEquivalence :: Automaton -> IO ()
 checkAutomatonEquivalence automaton = do
---    putStrLn "Enter the equivalence table as a list of (String, Int) pairs. For example: [(\"a\",1),(\"b\",2)]"
+--    putStrLn "Enter the equivalence table as a list of (String, [(Char, String)], Int) tuples. For example: [(\"A\", [('a', \"B\")], 0), (\"B\", [('b', \"A\")], 1)]"
 --    putStr "Equivalence table: "
     hFlush stdout
     eqTableInput <- getLine
-    let maybeEqTable = reads eqTableInput :: [([(String, Int)], String)]
+    let maybeEqTable = reads eqTableInput :: [([(String, [(Char, String)], Int)], String)]
     case maybeEqTable of
         [(eqTable, "")] -> do
             let enteredAutomaton = fromEquivalenceTable eqTable
@@ -73,7 +73,7 @@ checkAutomatonEquivalence automaton = do
             case equivalenceResult of
 --                Right True  -> putStrLn "The automata are equivalent."
                 Right True -> putStrLn "1"
-                Left msg -> putStrLn msg
 --                Right False -> putStrLn "The automata are NOT equivalent."
+                Left msg -> putStrLn msg
 --                Left errMsg -> putStrLn $ "Error during equivalence checking: " ++ errMsg
         _ -> putStrLn "Invalid input. Please enter a valid equivalence table."

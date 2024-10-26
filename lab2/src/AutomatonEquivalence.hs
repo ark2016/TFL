@@ -2,7 +2,10 @@ module AutomatonEquivalence
     ( Automaton(..)
     , areAutomataEquivalent
     ) where
-
+{-|
+Этот модуль предоставляет функциональность для проверки эквивалентности двух детерминированных
+конечных автоматов (ДКА) и поиска контрпримера в случае их неэквивалентности.
+-}
 import Automaton (Automaton(..))
 import AutomatonMinimizer (minimizeAutomaton)
 import qualified Data.Map as Map
@@ -10,7 +13,24 @@ import Data.Maybe (fromMaybe)
 import qualified Data.Sequence as Seq
 import Data.Sequence (Seq(..), (|>))
 
--- Проверка эквивалентности двух автоматов
+{-|
+Проверяет эквивалентность двух автоматов.
+
+@
+areAutomataEquivalent :: Automaton -> Automaton -> Either String Bool
+@
+
+Возвращает:
+- @Right True@, если автоматы эквивалентны
+- @Left error@, если автоматы не эквивалентны или имеют разные алфавиты,
+  где @error@ - строка с описанием ошибки или контрпримером
+
+Алгоритм:
+1. Проверяет, одинаковы ли алфавиты автоматов
+2. Минимизирует оба автомата
+3. Сравнивает минимизированные автоматы
+4. Если автоматы не эквивалентны, ищет контрпример
+-}
 areAutomataEquivalent :: Automaton -> Automaton -> Either String Bool
 areAutomataEquivalent automaton1 automaton2
     | alphabet automaton1 /= alphabet automaton2 = Left "Alphabets are different"
@@ -21,7 +41,16 @@ areAutomataEquivalent automaton1 automaton2
            then Right True
            else Left (findCounterexample minimized1 minimized2)
 
--- Функция поиска контрпримера с использованием BFS
+{-|
+Ищет контрпример для двух неэквивалентных автоматов.
+
+@
+findCounterexample :: Automaton -> Automaton -> String
+@
+
+Использует поиск в ширину (BFS) для нахождения кратчайшей строки,
+на которой автоматы дают разные результаты.
+-}
 findCounterexample :: Automaton -> Automaton -> String
 findCounterexample automaton1 automaton2 =
     case bfs (Seq.singleton "") of
@@ -38,13 +67,29 @@ findCounterexample automaton1 automaton2 =
     nextStrings :: String -> Seq String
     nextStrings prefix = Seq.fromList [prefix ++ [c] | c <- alphabet automaton1]
 
--- Запуск автомата на строке
+{-|
+Запускает автомат на заданной входной строке.
+
+@
+runAutomaton :: Automaton -> String -> Bool
+@
+
+Возвращает @True@, если автомат принимает строку, и @False@ в противном случае.
+-}
 runAutomaton :: Automaton -> String -> Bool
 runAutomaton automaton input =
     let finalState = foldl (stepAutomaton automaton) (initialState automaton) input
     in finalState `elem` acceptingStates automaton
 
--- Шаг автомата по одному символу
+{-|
+Выполняет один шаг работы автомата.
+
+@
+stepAutomaton :: Automaton -> Int -> Char -> Int
+@
+
+Принимает текущее состояние и символ, возвращает следующее состояние автомата.
+-}
 stepAutomaton :: Automaton -> Int -> Char -> Int
 stepAutomaton automaton state char =
     fromMaybe state (Map.lookup (state, char) (transitions automaton))
@@ -52,9 +97,29 @@ stepAutomaton automaton state char =
 
 
 
---let dfa1 = Automaton {states = [0, 1],alphabet = ['a', 'b'],transitions = Map.fromList [((0, 'a'), 1), ((0, 'b'), 0), ((1, 'a'), 1), ((1, 'b'), 1)],initialState = 0,acceptingStates = [1]}
---let dfa2 = Automaton {states = [0, 1],alphabet = ['a', 'b'],transitions = Map.fromList [((0, 'a'), 1), ((0, 'b'), 0), ((1, 'a'), 1), ((1, 'b'), 0)],initialState = 0,acceptingStates = [1]}
+{-|
+Примеры использования:
 
+1. Проверка эквивалентности двух одинаковых автоматов:
+@
+let dfa = Automaton {states = [0, 1], alphabet = ['a', 'b'],
+                     transitions = Map.fromList [((0, 'a'), 1), ((0, 'b'), 0), ((1, 'a'), 1), ((1, 'b'), 1)],
+                     initialState = 0, acceptingStates = [1]}
+areAutomataEquivalent dfa dfa  -- Должно вернуть Right True
+@
+
+2. Проверка эквивалентности двух разных автоматов:
+@
+let dfa1 = Automaton {states = [0, 1], alphabet = ['a', 'b'],
+                      transitions = Map.fromList [((0, 'a'), 1), ((0, 'b'), 0), ((1, 'a'), 1), ((1, 'b'), 1)],
+                      initialState = 0, acceptingStates = [1]}
+let dfa2 = Automaton {states = [0, 1], alphabet = ['a', 'b'],
+                      transitions = Map.fromList [((0, 'a'), 1), ((0, 'b'), 0), ((1, 'a'), 1), ((1, 'b'), 0)],
+                      initialState = 0, acceptingStates = [1]}
+areAutomataEquivalent dfa1 dfa2  -- Должно вернуть Left с контрпримером
+@
+
+-}
 
 
 

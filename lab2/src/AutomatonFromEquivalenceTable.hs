@@ -78,3 +78,5 @@ fromEquivalenceTable table =
         , initialState = initialStateId
         , acceptingStates = acceptingStatesList
         }
+--table1 = [    ("e",    [('a', "a")],          0),   ("a",    [('a', "a"), ('b', "a")], 1)   ]
+--[    ("e",    [('a', "saw_a")],     0), ("saw_a", [('b', "found_ab")], 0), ("found_ab", [('a', "found_ab"),                  ('b', "found_ab")], 1) ]

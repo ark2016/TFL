@@ -103,6 +103,43 @@ func ReadTable() (E, S, states []string, table [][]string) {
 	return E, S, states, table
 }
 
+func (e *EquivalenceClassesTable) BuildDFA1() StateMachine {
+	countOfStates := -1
+	finalStates := make(map[int]struct{})
+	prefixToStateNum := make(map[string]int)
+	used := make(map[string]struct{})
+
+	for prefix, cls := range e.mainTable {
+		if _, exists := used[cls]; !exists {
+			countOfStates++
+			used[cls] = struct{}{}
+			prefixToStateNum[prefix] = countOfStates
+			if cls[0] == '+' {
+				finalStates[countOfStates] = struct{}{}
+			}
+		}
+	}
+
+	transitions := make([][]string, countOfStates+1)
+	for i := range transitions {
+		transitions[i] = make([]string, countOfStates+1)
+	}
+
+	for prefix, from := range prefixToStateNum {
+		for _, letter := range e.alphabet {
+			nextState := prefix + string(letter)
+			to := prefixToStateNum[e.classesOfEquivalence[e.additionalTable[nextState]]]
+			if transitions[from][to] == "" {
+				transitions[from][to] = string(letter)
+			} else {
+				transitions[from][to] += " " + string(letter)
+			}
+		}
+	}
+
+	return StateMachine{transitions: transitions, finalStates: finalStates, stateCount: countOfStates}
+}
+
 func main() {
 	// Чтение таблицы эквивалентности с ввода пользователя
 	E, S, states, table := ReadTable()

@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func main() {
+func main55() {
 	// Определяем алфавит для автомата
 	alphabet := []string{"a", "b", "c", "0", "1", "2"}
 

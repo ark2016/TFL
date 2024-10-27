@@ -1,5 +1,4 @@
 from random import randint
-# from unittest import expectedFailure
 import requests
 import json
 
@@ -10,7 +9,6 @@ class RelictMatQueryModel:
         self.error_code = "! :-( !"
 
     def membershipQuery(self, word):
-        # word = word.replace("", "ε")
         if word == "":
             word = "ε"
         
@@ -23,12 +21,7 @@ class RelictMatQueryModel:
                 data=json.dumps(query_body), 
                 headers={"Content-Type": "application/json"}
             )
-            # print("HTTP Status Code:", response.status_code)
-            # print("Response Content:", response.content)
-            # print(response.content)
             response_json = response.json()
-            # print(response_json["response"])
-            # print(word, response_json["response"])
             return response_json["response"]
         except Exception as e:
             print("Произошла ошибка при проверке на включение :-( =>", e)
@@ -41,28 +34,21 @@ class RelictMatQueryModel:
             "suffixes": E,
             "table": table
         }
-        # print(query_body)
         try:
             response = requests.post(
                 "http://127.0.0.1:8095/checkTable", 
                 data=json.dumps(query_body), 
                 headers={"Content-Type": "application/json"}
             )
-            # print("HTTP Status Code:", response.status_code)
-            # print("Response Content:", response.content)
             
         except Exception as e:
             print("Произошла ошибка при проверке на эквивалентность :-( =>", e)
             return None
-        # print(response)
         response = response.json()
-        # print(response)
         if response["type"]==True and response["response"] != None:
-            # print("лабиринт МАТа имеет слова, которые не принадлежат языку пользователѝ, контрпример:", response["response"])
             return (0, response["response"])
             
         elif response["type"] == False:
-            # print(response["response"])
             return (1, response["response"])
         else:
             return (2, "")
@@ -77,7 +63,7 @@ class LStarAlgorithm:
         self.E = [""]  # суффиксы, начинаются с ε
         self.T = {}    # вся таблица (основнаѝ + расширеннаѝ часть)
         
-        # инициализациѝ таблицы
+        # инициализация таблицы
         self.initialize_table()
 
     def initialize_table(self):
@@ -116,7 +102,7 @@ class LStarAlgorithm:
         return True, None, None, None, None
 
     def get_row(self, s):
-        # возращает ѝтроку из таблицы T
+        # возращает строку из таблицы T
         return tuple(self.T.get((s, e), '?') for e in self.E)
 
     def extend_table(self):  
@@ -127,18 +113,7 @@ class LStarAlgorithm:
                         self.T[(s + a, e)] = self.mat.membershipQuery(s + a + e)
 
     def run(self):
-        # i = -1
-        # while True:
-        #     # i+=1
-        for i in range(1000):
-            # print("iteration i: ", i)
-            # print("WHILE")
-            # print(self.S)
-            # print(self.E)
-            # print(self.T)
-            # print(self.E)
-            # print(self.T)
-            # print()
+        while True:
             # Step 1: проверка на полноту
             closed, s1, a = self.is_closed()
             if not closed:
@@ -162,14 +137,14 @@ class LStarAlgorithm:
                 print("Алгоритм завершен. Модель правильна.")
                 return hypothesis
             elif equivalent == 1:
-                # adding conterexample and it's prefix to S
+                # добавляем контрпример и его префиксы в S
                 for i in range(1, len(counterexample) + 1):
                     temp = counterexample[:i]
                     if not(temp in self.S):
                         self.S.append(temp)
                 self.extend_table()
             elif equivalent == 0:
-                # adding conterexample and it's suffix to E
+                # добавляем контрпример и его суффиксы в E
                 for i in range(0, len(counterexample)):
                     temp = counterexample[i:]
                     if not(temp in self.E):
@@ -214,13 +189,6 @@ class LStarAlgorithm:
         Em = Em[:len(Em)-1]
         Nm = Nm[:len(Nm)-1]
         table_string = table_string[:len(table_string)-1]
-            
-        # print("___________________")
-        # print(Sm, self.S)
-        # print(Em, self.E)
-        # print(Nm, non_main_prefixes)
-        # print(table_string)
-        # print("___________________")
 
         return [Sm, Nm, Em, table_string]
 

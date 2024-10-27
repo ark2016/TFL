@@ -13,6 +13,7 @@ class RelictMatQueryModel:
         # word = word.replace("", "ε")
         if word == "":
             word = "ε"
+        
         query_body = {
             "word": word
         }
@@ -24,9 +25,10 @@ class RelictMatQueryModel:
             )
             # print("HTTP Status Code:", response.status_code)
             # print("Response Content:", response.content)
-            print(response.content)
+            # print(response.content)
             response_json = response.json()
             # print(response_json["response"])
+            # print(word, response_json["response"])
             return response_json["response"]
         except Exception as e:
             print("Произошла ошибка при проверке на включение :-( =>", e)
@@ -46,22 +48,24 @@ class RelictMatQueryModel:
                 data=json.dumps(query_body), 
                 headers={"Content-Type": "application/json"}
             )
-            print("HTTP Status Code:", response.status_code)
-            print("Response Content:", response.content)
+            # print("HTTP Status Code:", response.status_code)
+            # print("Response Content:", response.content)
             
         except Exception as e:
             print("Произошла ошибка при проверке на эквивалентность :-( =>", e)
             return None
-        print(response)
+        # print(response)
         response = response.json()
         # print(response)
-        if response["type"] and response["response"]:
-            return (False, response["response"])
-            print("лабиринт МАТа имеет слова, которые не принадлежат языку пользователѝ, контрпример:", response["response"])
+        if response["type"]==True and response["response"] != None:
+            # print("лабиринт МАТа имеет слова, которые не принадлежат языку пользователѝ, контрпример:", response["response"])
+            return (0, response["response"])
+            
         elif response["type"] == False:
-            return (False, response["response"])
+            # print(response["response"])
+            return (1, response["response"])
         else:
-            return (True, "")
+            return (2, "")
 
 
 # Class of SIMPLE L* Algorithm
@@ -117,19 +121,24 @@ class LStarAlgorithm:
 
     def extend_table(self):  
         for s in self.S:
-            for a in self.A:
+            for a in ([""] + self.A ):
                 for e in self.E:
                     if (s + a, e) not in self.T:
                         self.T[(s + a, e)] = self.mat.membershipQuery(s + a + e)
 
     def run(self):
+        # i = -1
         # while True:
-        for i in range(10):
-            print("iteration i: ", i)
-            print(self.S)
-            print(self.E)
-            print(self.T)
-            print()
+        #     # i+=1
+        for i in range(1000):
+            # print("iteration i: ", i)
+            # print("WHILE")
+            # print(self.S)
+            # print(self.E)
+            # print(self.T)
+            # print(self.E)
+            # print(self.T)
+            # print()
             # Step 1: проверка на полноту
             closed, s1, a = self.is_closed()
             if not closed:
@@ -149,17 +158,29 @@ class LStarAlgorithm:
             # Шаг 3: equal query
             hypothesis = self.build_hypothesis()
             equivalent, counterexample = self.mat.equivalenceQuery(*hypothesis)
-            if equivalent:
+            if equivalent == 2:
                 print("Алгоритм завершен. Модель правильна.")
                 return hypothesis
-            else:
+            elif equivalent == 1:
                 # adding conterexample and it's prefix to S
                 for i in range(1, len(counterexample) + 1):
-                    self.S.append(counterexample[:i])
+                    temp = counterexample[:i]
+                    if not(temp in self.S):
+                        self.S.append(temp)
+                self.extend_table()
+            elif equivalent == 0:
+                # adding conterexample and it's suffix to E
+                for i in range(0, len(counterexample)):
+                    temp = counterexample[i:]
+                    if not(temp in self.E):
+                        self.E.append(temp)
                 self.extend_table()
 
     def build_hypothesis(self):
-        non_main_prefixes = [x[0] for x in self.T.keys() if not(x[0] in self.S)]
+        non_main_prefixes = []
+        for x in self.T.keys():
+            if not(x[0] in self.S) and not(x[0] in non_main_prefixes):
+                non_main_prefixes.append(x[0])
         table_string = ""
         for s in self.S:
             for e in self.E: 
@@ -182,7 +203,7 @@ class LStarAlgorithm:
         Em = ""
         for x in self.E:
             if x == "": Em += "ε "
-            else: Sm += str(x) + " "
+            else: Em += str(x) + " "
         
         Nm = ""
         for x in non_main_prefixes:
@@ -195,9 +216,9 @@ class LStarAlgorithm:
         table_string = table_string[:len(table_string)-1]
             
         # print("___________________")
-        # print(Sm)
-        # print(Em)
-        # print(Nm)
+        # print(Sm, self.S)
+        # print(Em, self.E)
+        # print(Nm, non_main_prefixes)
         # print(table_string)
         # print("___________________")
 

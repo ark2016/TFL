@@ -1,7 +1,7 @@
 import random
 
 from graphviz import Digraph
-from pyformlang.finite_automaton import DeterministicFiniteAutomaton, State, Symbol
+from pyformlang.finite_automaton import DeterministicFiniteAutomaton, State, Symbol, epsilon
 
 # грамматика
 """
@@ -35,7 +35,7 @@ def gen_random_tokensCods():
     return tokensCods
 
 
-def generate_dfa(input_string, condition):
+def generate_dfa(input_string, condition, type):
     """
     Генерирует ДКА на основе заданной строки и условия.
 
@@ -44,7 +44,7 @@ def generate_dfa(input_string, condition):
     :return: объект DeterministicFiniteAutomaton, представляющий сгенерированный ДКА.
     """
     dfa = DeterministicFiniteAutomaton()
-    previous_state = State("S0")
+    previous_state = State(f"{type}0")
     dfa.add_start_state(previous_state)
 
     # Текущее состояние для каждого символа
@@ -56,7 +56,7 @@ def generate_dfa(input_string, condition):
         repetitions = condition[symbol]
         for _ in range(repetitions):
             state_counter += 1
-            current_state = State(f"S{state_counter}")
+            current_state = State(f"{type}{state_counter}")
             dfa.add_transition(previous_state, Symbol(symbol), current_state)
             previous_state = current_state
 
@@ -71,7 +71,7 @@ def gen_random_eol_Automat():
     input_string = "c0"
     countC, count0 = random.randint(1, 5), random.randint(2, 6)
     condition = {"c": countC, "0": count0}
-    dfa = generate_dfa(input_string, condition)
+    dfa = generate_dfa(input_string, condition, "EOL")
     return dfa
 
 
@@ -80,7 +80,7 @@ def gen_random_const_Automat():
     dfa = DeterministicFiniteAutomaton()
 
     # Определяем единственное состояние
-    state = State("S0")
+    state = State("C0")
 
     # Добавляем состояние как начальное и конечное
     dfa.add_start_state(state)
@@ -99,7 +99,7 @@ def gen_random_var_Automat():
     dfa = DeterministicFiniteAutomaton()
 
     # Определяем единственное состояние
-    state = State("S0")
+    state = State("V0")
 
     # Добавляем состояние как начальное и конечное
     dfa.add_start_state(state)
@@ -117,7 +117,7 @@ def gen_random_blank_Automat():
     input_string = "b0"
     countB, count0 = random.randint(1, 5), random.randint(2, 6)
     condition = {"b": countB, "0": count0}
-    dfa = generate_dfa(input_string, condition)
+    dfa = generate_dfa(input_string, condition, "B")
     return dfa
 
 
@@ -126,7 +126,7 @@ def gen_random_lbr1_Automat():
     input_string = "0a"
     count0, countA = random.randint(1, 5), random.randint(2, 6)
     condition = {"0": count0, "a": countA}
-    dfa = generate_dfa(input_string, condition)
+    dfa = generate_dfa(input_string, condition, "lbr1")
     return dfa
 
 
@@ -134,7 +134,7 @@ def gen_random_rbr1_Automat():
     input_string = "0b"
     count0, countB = random.randint(1, 5), random.randint(2, 6)
     condition = {"0": count0, "b": countB}
-    dfa = generate_dfa(input_string, condition)
+    dfa = generate_dfa(input_string, condition, "rbr1")
     return dfa
 
 
@@ -143,7 +143,7 @@ def gen_random_equal_Automat():
     input_string = "ab2"
     countA, countB, count2 = random.randint(1, 5), random.randint(2, 6), random.randint(1, 6)
     condition = {"a": countA, "b": countB, "2": count2}
-    dfa = generate_dfa(input_string, condition)
+    dfa = generate_dfa(input_string, condition, "EQ")
     return dfa
 
 
@@ -151,7 +151,7 @@ def gen_random_sep_Automat():
     input_string = "ab1"
     countA, countB, count1 = random.randint(1, 5), random.randint(2, 6), random.randint(1, 6)
     condition = {"a": countA, "b": countB, "1": count1}
-    dfa = generate_dfa(input_string, condition)
+    dfa = generate_dfa(input_string, condition, "SEP")
     return dfa
 
 
@@ -159,7 +159,7 @@ def gen_random_lbr2_Automat():
     input_string = "1a"
     count1, countA = random.randint(1, 5), random.randint(2, 6)
     condition = {"1": count1, "a": countA}
-    dfa = generate_dfa(input_string, condition)
+    dfa = generate_dfa(input_string, condition, "lbr2")
     return dfa
 
 
@@ -167,7 +167,7 @@ def gen_random_rbr2_Automat():
     input_string = "1b"
     count1, countB = random.randint(1, 5), random.randint(2, 6)
     condition = {"1": count1, "b": countB}
-    dfa = generate_dfa(input_string, condition)
+    dfa = generate_dfa(input_string, condition, "rbr2")
     return dfa
 
 
@@ -175,7 +175,7 @@ def gen_random_lbr3_Automat():
     input_string = "2a"
     count2, countA = random.randint(1, 5), random.randint(2, 6)
     condition = {"2": count2, "a": countA}
-    dfa = generate_dfa(input_string, condition)
+    dfa = generate_dfa(input_string, condition, "lbr3")
     return dfa
 
 
@@ -183,7 +183,7 @@ def gen_random_rbr3_Automat():
     input_string = "2b"
     count2, countB = random.randint(1, 5), random.randint(2, 6)
     condition = {"2": count2, "b": countB}
-    dfa = generate_dfa(input_string, condition)
+    dfa = generate_dfa(input_string, condition, "rbr3")
     return dfa
 
 
@@ -191,6 +191,14 @@ def gen_random_rbr3_Automat():
 
 
 def gen_random_expression_Automat(depth=0, max_depth=3):
+    """
+    [expression] ::= [var] | [const] |
+                [expression][blank][expression][lbr-3][expression] [rbr-3] |
+                 [lbr-2] [const] [blank] [expression] [rbr-2]
+    :param depth:
+    :param max_depth:
+    :return:
+    """
     print(depth, max_depth)
     if depth >= max_depth:
         # На максимальной глубине возвращаем только var или const
@@ -213,7 +221,15 @@ def gen_random_expression_Automat(depth=0, max_depth=3):
         rbr3 = gen_random_rbr3_Automat()
 
         # Конкатенация автоматов
-        return expr1.concatenate(blank).concatenate(expr2).concatenate(lbr3).concatenate(expr3).concatenate(rbr3)
+
+        # конечные состояния expr1 соединяем с начальным у blank
+        newDka1 = connectDFA1_to_DFA2(expr1, blank)
+        newDka2 = connectDFA1_to_DFA2(newDka1, expr2)
+        newDka3 = connectDFA1_to_DFA2(newDka2, lbr3)
+        newDka4 = connectDFA1_to_DFA2(newDka3, expr3)
+        newDka5 = connectDFA1_to_DFA2(newDka4, rbr3)
+
+        return newDka5
 
     elif choice == "const_expr":
         lbr2 = gen_random_lbr2_Automat()
@@ -222,8 +238,13 @@ def gen_random_expression_Automat(depth=0, max_depth=3):
         expr = gen_random_expression_Automat(depth + 1, max_depth)
         rbr2 = gen_random_rbr2_Automat()
 
+        newDka1 = connectDFA1_to_DFA2(lbr2, const)
+        newDka2 = connectDFA1_to_DFA2(newDka1, blank)
+        newDka3 = connectDFA1_to_DFA2(newDka2, expr)
+        newDka4 = connectDFA1_to_DFA2(newDka3, rbr2)
+
         # Конкатенация автоматов
-        return lbr2.concatenate(const).concatenate(blank).concatenate(expr).concatenate(rbr2)
+        return newDka4
 
 
 def gen_random_pattern_Automat(depth=0, max_depth=3):
@@ -275,7 +296,7 @@ def gen_random_program_Automat():
 
 # -------------------------------------
 
-def visualize_dfa(dfa):
+def visualize_dfa(dfa, name):
     dot = Digraph(comment='The Round Table')
 
     # Добавляем состояния
@@ -294,7 +315,7 @@ def visualize_dfa(dfa):
     # Добавляем переходы
     for from_state, to_dict in dfa.to_dict().items():
         for symbol, to_state in to_dict.items():
-            print(symbol, to_state, type(to_state))
+            #print(symbol, to_state, type(to_state))
             if type(to_state) == set:
                 for to_state1 in to_dict:
                     dot.edge(str(from_state), str(to_state1), label=str(symbol))
@@ -302,15 +323,71 @@ def visualize_dfa(dfa):
                 dot.edge(str(from_state), str(to_state), label=str(symbol))
 
     # Рендерим и сохраняем в файл
-    dot.render('dfa.gv', view=True)
+    dot.render(f'{name}', view=True)
+
+
+def connectDFA1_to_DFA2(dfa1, dfa2):
+    finalStates1 = list(dfa1.final_states)
+    finalStates2 = list(dfa2.final_states)
+
+    for elem in finalStates1:
+        dfa1.remove_final_state(elem)
+
+    startState1 = dfa1.start_state
+    startState2 = dfa2.start_state
+
+    newDFA = DeterministicFiniteAutomaton()
+    newDFA.add_start_state(startState1)
+
+    transictons1 = dfa1.to_fst().transitions
+
+    for elem in transictons1:
+        state = State(elem[0])
+        symbol = Symbol(elem[1])
+        to_states = transictons1[elem]
+
+        for elem2 in to_states:
+            to_state = State(elem2[0])
+            if to_state in finalStates1:
+                to_state = startState2
+
+            newDFA.add_transition(state, symbol, to_state)
+
+    transictons2 = dfa2.to_fst().transitions
+    for elem in transictons2:
+        state = State(elem[0])
+        symbol = Symbol(elem[1])
+        to_states = transictons2[elem]
+        if state in finalStates2:
+            newDFA.add_final_state(state)
+        for elem2 in to_states:
+            to_state = State(elem2[0])
+            newDFA.add_transition(state, symbol, to_state)
+
+    return newDFA
+
 
 def main():
-    print(gen_random_tokensCods())
-    eol = gen_random_eol_Automat()
-    #visualize_dfa(eol)
+    #print(gen_random_tokensCods())
+    #eol = gen_random_eol_Automat()
+    ln3 = gen_random_lbr2_Automat()
+    const1 = gen_random_const_Automat()
 
-    expr = gen_random_expression_Automat()
-    #visualize_dfa(expr)
+    visualize_dfa(ln3, "ln3")
+    visualize_dfa(const1, "const")
+
+    newDKA = connectDFA1_to_DFA2(ln3, const1)
+
+    print(newDKA.is_deterministic())
+
+
+    visualize_dfa(newDKA, "ln3+const")
+
+    #expr = gen_random_expression_Automat()
+    #visualize_dfa(expr, "EXPR")
+
+
+
 
     #print(expr.states)
     #print(expr.to_regex())

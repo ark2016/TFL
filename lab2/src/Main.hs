@@ -2,17 +2,20 @@
 module Main where
 
 import Automaton (Automaton(..))
-import RandomAutomatonGenerator (generateRandomAutomaton)
 import AutomatonInclusion (isStringAccepted)
 import AutomatonVisualization (visualizeAutomaton)
 import AutomatonFromEquivalenceTable (fromEquivalenceTable)
 import AutomatonEquivalence (areAutomataEquivalent)
-import System.IO (hFlush, stdout)
+import System.IO (hFlush, stdout, readFile)
+import qualified Data.Map as Map
 
 -- Main function
 main :: IO ()
 main = do
-    let automaton = generateRandomAutomaton 1
+    -- Read the automaton from the file
+    automatonText <- readFile "Automaton.txt"
+    let automaton = read automatonText :: Automaton
+    --let automaton = generateRandomAutomaton 1
     mainLoop automaton
 
 -- Main loop to handle user interactions
@@ -44,7 +47,6 @@ checkStringInclusion automaton = do
     if result == 1
         then putStrLn "1"
         else putStrLn "0"
-
 
 -- Function to check if another automaton is equivalent to the generated one
 checkAutomatonEquivalence :: Automaton -> IO ()

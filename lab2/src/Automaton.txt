@@ -1,0 +1,1 @@
+Automaton {states = [0,1,2], alphabet = "abc", transitions = fromList [((0,'a'),1),((1,'c'),2),((2,'a'),0)], initialState = 0, acceptingStates = [1,2]}

@@ -38,13 +38,21 @@ executable mat
   -- Entry point for the executable
   main-is:             Main.hs
 
-  -- Source directory for MainMain.hs and other modules
+  -- Source directory for Main.hs and other modules
   hs-source-dirs:      src
 
   -- Dependencies for the executable
   build-depends:       base >=4.7 && <5
                      , containers >= 0.6 && < 1
                      , lab2
+
+  -- Add the missing modules here
+  other-modules:       Automaton
+                     , AutomatonEquivalence
+                     , AutomatonFromEquivalenceTable
+                     , AutomatonInclusion
+                     , AutomatonMinimizer
+                     , AutomatonVisualization
 
   -- Set the default language
   default-language:    Haskell2010

@@ -53,12 +53,13 @@ checkAutomatonEquivalence :: Automaton -> IO ()
 checkAutomatonEquivalence automaton = do
     hFlush stdout
     eqTableInput <- getLine
-    let maybeEqTable = reads eqTableInput :: [([(String, [(Char, String)], Int)], String)]
+    let maybeEqTable = reads eqTableInput :: [([(String, String, Int)], String)]
     case maybeEqTable of
         [(eqTable, "")] -> do
             let enteredAutomaton = fromEquivalenceTable eqTable
             let equivalenceResult = areAutomataEquivalent automaton enteredAutomaton
             case equivalenceResult of
                 Right True -> putStrLn "1"
+                Right False -> putStrLn "0"
                 Left msg -> putStrLn msg
-        _ -> putStrLn "Invalid input. Please enter a valid equivalence table."
+        _ -> putStrLn "Invalid input. Please enter a valid equivalence table in the form [(String, String, Int)]."

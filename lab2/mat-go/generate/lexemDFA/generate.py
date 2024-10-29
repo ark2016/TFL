@@ -356,34 +356,6 @@ class AutomatGenerator:
 
     # -------------------------------------
 
-    def visualize_dfa(self, dfa, name):
-        dot = Digraph(comment='The Round Table')
-
-        # Добавляем состояния
-        for state in dfa.states:
-            dot.node(str(state), str(state))
-
-        # Добавляем начальные состояния
-        for start_state in dfa.start_states:
-            dot.node(str(start_state) + "_start", shape="point")
-            dot.edge(str(start_state) + "_start", str(start_state))
-
-        # Добавляем конечные состояния
-        for final_state in dfa.final_states:
-            dot.node(str(final_state), str(final_state), shape="doublecircle")
-
-        # Добавляем переходы
-        for from_state, to_dict in dfa.to_dict().items():
-            for symbol, to_state in to_dict.items():
-                if type(to_state) == set:
-                    for to_state1 in to_dict:
-                        dot.edge(str(from_state), str(to_state1), label=str(symbol))
-                else:
-                    dot.edge(str(from_state), str(to_state), label=str(symbol))
-
-        # Рендерим и сохраняем в файл
-        dot.render(f'{name}', view=True)
-
     def __canonical_numbering(self, dfa, type):
         # Получаем все состояния
         states = list(dfa.states)
@@ -477,9 +449,3 @@ class AutomatGenerator:
         renumbered_DFA = self.__canonical_numbering(newDFA, "q")
 
         return renumbered_DFA
-
-    def get_automat_info(self, automat):
-        info = ""
-        info += "Starts: " + automat.start_states + "\n"
-        info += "Finals: ", automat.final_states
-        return info

@@ -204,7 +204,6 @@ class AutomatGenerator:
         :param max_depth:
         :return:
         """
-        print(depth, max_depth)
         if depth >= max_depth:
             # На максимальной глубине возвращаем только var или const
             return random.choice([self.var_Automaton, self.const_Automat])

@@ -275,5 +275,5 @@ func main() {
 	alphabet := []string{"L", "R"}
 	observationTable := NewObservationTable(alphabet)
 
-	observationTable.Learn(5)
+	observationTable.Learn(10)
 }

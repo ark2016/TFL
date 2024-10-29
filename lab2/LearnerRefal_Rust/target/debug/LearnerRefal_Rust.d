@@ -1,0 +1,1 @@
+C:\Users\a.korovkin\Desktop\TFL\lab2\LearnerRefal_Rust\target\debug\LearnerRefal_Rust.exe: C:\Users\a.korovkin\Desktop\TFL\lab2\LearnerRefal_Rust\src\learner.rs C:\Users\a.korovkin\Desktop\TFL\lab2\LearnerRefal_Rust\src\main.rs C:\Users\a.korovkin\Desktop\TFL\lab2\LearnerRefal_Rust\src\mat.rs

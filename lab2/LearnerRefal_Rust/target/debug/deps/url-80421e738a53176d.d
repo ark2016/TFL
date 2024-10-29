@@ -1,0 +1,11 @@
+C:\Users\a.korovkin\Desktop\TFL\lab2\LearnerRefal_Rust\target\debug\deps\liburl-80421e738a53176d.rmeta: C:\Users\a.korovkin\.cargo\registry\src\index.crates.io-6f17d22bba15001f\url-2.5.2\src\lib.rs C:\Users\a.korovkin\.cargo\registry\src\index.crates.io-6f17d22bba15001f\url-2.5.2\src\host.rs C:\Users\a.korovkin\.cargo\registry\src\index.crates.io-6f17d22bba15001f\url-2.5.2\src\origin.rs C:\Users\a.korovkin\.cargo\registry\src\index.crates.io-6f17d22bba15001f\url-2.5.2\src\parser.rs C:\Users\a.korovkin\.cargo\registry\src\index.crates.io-6f17d22bba15001f\url-2.5.2\src\path_segments.rs C:\Users\a.korovkin\.cargo\registry\src\index.crates.io-6f17d22bba15001f\url-2.5.2\src\slicing.rs C:\Users\a.korovkin\.cargo\registry\src\index.crates.io-6f17d22bba15001f\url-2.5.2\src\quirks.rs
+
+C:\Users\a.korovkin\Desktop\TFL\lab2\LearnerRefal_Rust\target\debug\deps\url-80421e738a53176d.d: C:\Users\a.korovkin\.cargo\registry\src\index.crates.io-6f17d22bba15001f\url-2.5.2\src\lib.rs C:\Users\a.korovkin\.cargo\registry\src\index.crates.io-6f17d22bba15001f\url-2.5.2\src\host.rs C:\Users\a.korovkin\.cargo\registry\src\index.crates.io-6f17d22bba15001f\url-2.5.2\src\origin.rs C:\Users\a.korovkin\.cargo\registry\src\index.crates.io-6f17d22bba15001f\url-2.5.2\src\parser.rs C:\Users\a.korovkin\.cargo\registry\src\index.crates.io-6f17d22bba15001f\url-2.5.2\src\path_segments.rs C:\Users\a.korovkin\.cargo\registry\src\index.crates.io-6f17d22bba15001f\url-2.5.2\src\slicing.rs C:\Users\a.korovkin\.cargo\registry\src\index.crates.io-6f17d22bba15001f\url-2.5.2\src\quirks.rs
+
+C:\Users\a.korovkin\.cargo\registry\src\index.crates.io-6f17d22bba15001f\url-2.5.2\src\lib.rs:
+C:\Users\a.korovkin\.cargo\registry\src\index.crates.io-6f17d22bba15001f\url-2.5.2\src\host.rs:
+C:\Users\a.korovkin\.cargo\registry\src\index.crates.io-6f17d22bba15001f\url-2.5.2\src\origin.rs:
+C:\Users\a.korovkin\.cargo\registry\src\index.crates.io-6f17d22bba15001f\url-2.5.2\src\parser.rs:
+C:\Users\a.korovkin\.cargo\registry\src\index.crates.io-6f17d22bba15001f\url-2.5.2\src\path_segments.rs:
+C:\Users\a.korovkin\.cargo\registry\src\index.crates.io-6f17d22bba15001f\url-2.5.2\src\slicing.rs:
+C:\Users\a.korovkin\.cargo\registry\src\index.crates.io-6f17d22bba15001f\url-2.5.2\src\quirks.rs:

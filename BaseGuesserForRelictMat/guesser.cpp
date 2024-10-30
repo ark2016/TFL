@@ -10,6 +10,10 @@
 using namespace std;
 using json = nlohmann::json;
 
+// Глобальные переменные для URL-адресов
+const string CHECK_WORD_URL = "http://127.0.0.1:8095/checkWord";
+const string CHECK_TABLE_URL = "http://127.0.0.1:8095/checkTable";
+
 class RelictMatQueryModel {
 public:
     RelictMatQueryModel() : result("1"), error_code("! :-( !") {}
@@ -18,16 +22,15 @@ public:
         string query_word = word.empty() ? "ε" : word;
         json query_body;
         query_body["word"] = query_word;
-        //cout << query_body << std::endl;
 
         try {
-            string response = postRequest("http://127.0.0.1:8095/checkWord", query_body);
+            string response = postRequest(CHECK_WORD_URL, query_body);
             auto jsonResponse = json::parse(response);
-            return jsonResponse["response"].get<bool>(); // Извлекаем булево значение
+            return jsonResponse["response"].get<bool>();
         }
         catch (const std::exception& e) {
             cerr << "Произошла ошибка при проверке на включение :-( => " << e.what() << endl;
-            return false; // Возвращаем значение по умолчанию
+            return false;
         }
     }
 
@@ -37,14 +40,11 @@ public:
         query_body["non_main_prefixes"] = S_extra;
         query_body["suffixes"] = E;
         query_body["table"] = table;
-        //cout << "QUERY BODY:" << std::endl;
-        //cout << query_body << std::endl;
 
         try {
-            string response = postRequest("http://127.0.0.1:8095/checkTable", query_body);
+            string response = postRequest(CHECK_TABLE_URL, query_body);
             auto jsonResponse = json::parse(response);
 
-            // Проверяем, что поле "type" существует и не равно null
             if (!jsonResponse["type"].is_null()) {
                 bool type_value = jsonResponse["type"].get<bool>();
 
@@ -56,7 +56,6 @@ public:
                 }
             }
 
-            // Если поле "type" равно null или другой случай
             return { 2, "" };
         }
         catch (const std::exception& e) {
@@ -113,6 +112,7 @@ public:
 
     void run() {
         while (true) {
+            // Проверка на замкнутость
             bool closed;
             std::string s1, a;
             std::tie(closed, s1, a) = isClosed();
@@ -122,6 +122,7 @@ public:
                 continue;
             }
 
+            // Проверка на противоречивость
             bool consistent;
             std::string s1_c, s2_c, a_c, e_c;
             std::tie(consistent, s1_c, s2_c, a_c, e_c) = isConsistent();
@@ -131,15 +132,18 @@ public:
                 continue;
             }
 
+            // Построении гипотизы
             auto hypothesis = buildHypothesis();
             int equivalent;
             std::string counterexample;
             std::tie(equivalent, counterexample) = mat.equivalenceQuery(std::get<0>(hypothesis), std::get<1>(hypothesis), std::get<2>(hypothesis), std::get<3>(hypothesis));
+            // Эквивалентность выполнена
             if (equivalent == 2) {
                 std::cout << "Алгоритм завершен. Модель правильна." << std::endl;
                 printHypothesis(std::get<0>(hypothesis), std::get<1>(hypothesis), std::get<2>(hypothesis), std::get<3>(hypothesis));
                 break;
             }
+            // Если язык автомата пользователя полностью содержит язык автомата МАТа и содержит некоторые дополнительные слова, которые не принадлежат лабиринту
             else if (equivalent == 1) {
                 for (size_t i = 1; i <= counterexample.size(); ++i) {
                     std::string prefix = counterexample.substr(0, i);
@@ -149,6 +153,7 @@ public:
                 }
                 extendTable();
             }
+            // Если лабиринт МАТа имеет слова, которые не принадлежат языку пользователя
             else if (equivalent == 0) {
                 for (size_t i = 0; i < counterexample.size(); ++i) {
                     std::string suffix = counterexample.substr(i);
@@ -239,7 +244,6 @@ private:
             }
         }
 
-        // Создание строки таблицы
         string table_string = "";
         for (const auto& s : S) {
             for (const auto& e : E) {
@@ -253,7 +257,6 @@ private:
             }
         }
 
-        // Создание строк Sm, Em, Nm
         string Sm = "";
         for (const auto& x : S) {
             Sm += (x.empty() ? "ε " : x + " ");
@@ -269,7 +272,6 @@ private:
             Nm += (x.empty() ? "ε " : x + " ");
         }
 
-        // Убираем последние пробелы
         if (!Sm.empty()) Sm.pop_back();
         if (!Em.empty()) Em.pop_back();
         if (!Nm.empty()) Nm.pop_back();
@@ -279,8 +281,6 @@ private:
     }
 
     void printHypothesis(const string& S, const string& S_extra, const string& E, const string& table) {
-
-        // Печать содержимого кортежа
         cout << "S: " << S << endl;
         cout << "S_extra: " << S_extra << endl;
         cout << "E: " << E << endl;

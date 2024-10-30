@@ -2,39 +2,39 @@ use std::collections::{HashMap, HashSet};
 use crate::mat;
 
 pub struct ObservationTable {
-    s: HashMap<String, bool>,
-    e: HashMap<String, bool>,
+    s: HashSet<String>,               
+    e: HashSet<String>,               
     t: HashMap<String, HashMap<String, i32>>,
     a: Vec<String>,
-    extended_part: HashMap<String, bool>,
+    extended_part: HashSet<String>,   
 }
 
 impl ObservationTable {
     pub fn new(alphabet: Vec<String>) -> Self {
         let mut table = ObservationTable {
-            s: HashMap::new(),
-            e: HashMap::new(),
+            s: HashSet::new(),
+            e: HashSet::new(),
             t: HashMap::new(),
             a: alphabet,
-            extended_part: HashMap::new(),
+            extended_part: HashSet::new(),
         };
 
-        table.s.insert("".to_string(), true);
-        table.e.insert("".to_string(), true);
+        table.s.insert("".to_string());
+        table.e.insert("".to_string());
 
         let eps_membership = mat::membership_query("").expect("Ошибка выполнения MembershipQuery");
         table.t.insert("".to_string(), HashMap::new());
         table.t.get_mut("").unwrap().insert("".to_string(), eps_membership);
 
-        for s in table.s.keys() {
+        for s in &table.s {
             if !table.t.contains_key(s) {
                 table.t.insert(s.clone(), HashMap::new());
             }
             for a in &table.a {
                 let extended_pref = format!("{}{}", s, a);
-                if !table.extended_part.contains_key(&extended_pref) {
+                if !table.extended_part.contains(&extended_pref) {
                     let result = mat::membership_query(&extended_pref).expect("Ошибка выполнения MembershipQuery");
-                    table.extended_part.insert(extended_pref.clone(), true);
+                    table.extended_part.insert(extended_pref.clone());
                     table.t.insert(extended_pref.clone(), HashMap::new());
                     table.t.get_mut(&extended_pref).unwrap().insert("".to_string(), result);
                 }
@@ -44,7 +44,7 @@ impl ObservationTable {
     }
 
     fn rows_equal(&self, s1: &str, s2: &str) -> bool {
-        for e in self.e.keys() {
+        for e in &self.e {
             if self.t[s1][e] != self.t[s2][e] {
                 return false;
             }
@@ -53,9 +53,9 @@ impl ObservationTable {
     }
 
     fn is_closed(&self) -> (bool, Option<String>) {
-        for extended_prefix in self.extended_part.keys() {
+        for extended_prefix in &self.extended_part {
             let mut match_found = false;
-            for s in self.s.keys() {
+            for s in &self.s {
                 if self.rows_equal(s, extended_prefix) {
                     match_found = true;
                     break;
@@ -70,11 +70,11 @@ impl ObservationTable {
     }
 
     fn is_consistent(&self) -> (bool, Option<String>) {
-        for s1 in self.s.keys() {
-            for s2 in self.s.keys() {
+        for s1 in &self.s {
+            for s2 in &self.s {
                 if s1 != s2 && self.rows_equal(s1, s2) {
                     for a in &self.a {
-                        for e in self.e.keys() {
+                        for e in &self.e {
                             let t_s1a = format!("{}{}", s1, a);
                             let t_s2a = format!("{}{}", s2, a);
                             if self.t[&t_s1a][e] != self.t[&t_s2a][e] {
@@ -90,16 +90,16 @@ impl ObservationTable {
     }
 
     fn extend_table_with_prefixes(&mut self) {
-        for s in self.s.keys().cloned().collect::<Vec<_>>() {
+        for s in self.s.clone() {
             for a in &self.a {
                 let extended_pref = format!("{}{}", s, a);
-                if !self.s.contains_key(&extended_pref) && !self.extended_part.contains_key(&extended_pref) {
-                    self.extended_part.insert(extended_pref.clone(), true);
+                if !self.s.contains(&extended_pref) && !self.extended_part.contains(&extended_pref) {
+                    self.extended_part.insert(extended_pref.clone());
 
                     if !self.t.contains_key(&extended_pref) {
                         self.t.insert(extended_pref.clone(), HashMap::new());
                     }
-                    for e in self.e.keys() {
+                    for e in &self.e {
                         let result = mat::membership_query(&format!("{}{}", extended_pref, e)).expect("Ошибка выполнения MembershipQuery");
                         self.t.get_mut(&extended_pref).unwrap().insert(e.clone(), result);
                     }
@@ -109,7 +109,7 @@ impl ObservationTable {
     }
 
     fn extend_table_with_new_suffix(&mut self, extended_suf: &str) {
-        for s in self.s.keys().chain(self.extended_part.keys()) {
+        for s in self.s.iter().chain(self.extended_part.iter()) {
             if !self.t.contains_key(s) {
                 self.t.insert(s.clone(), HashMap::new());
             }
@@ -121,8 +121,8 @@ impl ObservationTable {
     fn add_counter_example(&mut self, counter_example: &str) {
         for i in 0..counter_example.len() {
             let suffix = &counter_example[i..];
-            if !self.e.contains_key(suffix) {
-                self.e.insert(suffix.to_string(), true);
+            if !self.e.contains(suffix) {
+                self.e.insert(suffix.to_string());
                 self.extend_table_with_new_suffix(suffix);
             }
         }
@@ -133,7 +133,7 @@ impl ObservationTable {
         let mut non_main_prefixes = Vec::new();
         let mut suffixes = Vec::new();
     
-        for prefix in self.s.keys() {
+        for prefix in &self.s {
             if prefix.is_empty() {
                 main_prefixes.push("ε".to_string());
             } else {
@@ -141,7 +141,7 @@ impl ObservationTable {
             }
         }
     
-        for prefix in self.extended_part.keys() {
+        for prefix in &self.extended_part {
             if prefix.is_empty() {
                 non_main_prefixes.push("ε".to_string());
             } else {
@@ -149,7 +149,7 @@ impl ObservationTable {
             }
         }
     
-        for suffix in self.e.keys() {
+        for suffix in &self.e {
             if suffix.is_empty() {
                 suffixes.push("ε".to_string());
             } else {
@@ -190,7 +190,6 @@ impl ObservationTable {
             table_entries.join(" "),
         )
     }
-    
 
     fn print_observation_table(&self) {
         let (main_prefixes, non_main_prefixes, suffixes, table_str) = self.form_query();
@@ -211,7 +210,7 @@ impl ObservationTable {
             self.print_observation_table();
 
             if let (false, Some(extended_pref)) = self.is_closed() {
-                self.s.insert(extended_pref.clone(), true);
+                self.s.insert(extended_pref.clone());
                 self.extended_part.remove(&extended_pref);
                 println!("таблица неполная");
                 self.extend_table_with_prefixes();
@@ -220,7 +219,7 @@ impl ObservationTable {
             println!("таблица полная");
 
             if let (false, Some(extended_suf)) = self.is_consistent() {
-                self.e.insert(extended_suf.clone(), true);
+                self.e.insert(extended_suf.clone());
                 println!("таблица противоречива");
                 self.extend_table_with_new_suffix(&extended_suf);
                 continue;

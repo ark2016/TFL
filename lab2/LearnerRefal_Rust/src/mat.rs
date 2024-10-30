@@ -4,11 +4,6 @@ use std::error::Error;
 use std::fmt;
 
 #[derive(Serialize)]
-struct InitData {
-    mode: String,
-}
-
-#[derive(Serialize)]
 struct MembershipData {
     word: String,
 }
@@ -49,25 +44,6 @@ impl HttpResponseError {
     }
 }
 
-pub fn init(mode: &str) -> Result<(), Box<dyn Error>> {
-    let client = Client::new();
-    let url = "http://localhost:8080/generate";
-    let data = InitData {
-        mode: mode.to_string(),
-    };
-
-    let resp: Response = client.post(url).json(&data).send()?;
-    
-    if resp.status().is_success() {
-        println!("Соединение установлено и запрос на /generate выполнен успешно");
-        Ok(())
-    } else {
-        Err(Box::new(HttpResponseError::new(&format!(
-            "Ошибка: статус ответа {}",
-            resp.status()
-        ))))
-    }
-}
 
 pub fn membership_query(query: &str) -> Result<i32, Box<dyn Error>> {
     let client = Client::new();

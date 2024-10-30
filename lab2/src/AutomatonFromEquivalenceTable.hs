@@ -10,6 +10,9 @@ import AutomatonVisualization (visualizeAutomaton)
 fromEquivalenceTable :: [(String, String, Int)] -> Automaton
 fromEquivalenceTable table =
     let
+        -- Define the epsilon symbol as 'E'
+        epsilonSymbol = 'E'
+
         -- Extract the class names (first element in each row)
         classNames = map (\(name, _, _) -> name) table
 
@@ -19,8 +22,8 @@ fromEquivalenceTable table =
             then error "Duplicate class names found"
             else ()
 
-        -- Ensure the epsilon class (represented by "") is present
-        _ = if "" `elem` classNames
+        -- Ensure the epsilon class (represented by the symbol 'E') is present
+        _ = if any (== [epsilonSymbol]) classNames
             then ()
             else error "No epsilon class found in the table"
 
@@ -31,10 +34,10 @@ fromEquivalenceTable table =
         statesList = [0..(Map.size classToState - 1)]
 
         -- Extract and deduplicate the alphabet from all transitions
-        alphabetList = nub [ head c | (_, c, _) <- table, not (null c) ] -- First character of each non-empty string
+        alphabetList = nub [ head c | (_, c, _) <- table, not (null c), head c /= epsilonSymbol ] -- Only non-epsilon symbols
 
-        -- The initial state is the one corresponding to the empty string (epsilon)
-        initialStateId = classToState Map.! ""
+        -- The initial state is the one corresponding to the epsilon symbol ('E')
+        initialStateId = classToState Map.! [epsilonSymbol]
 
         -- Accepting states: states with value 1 in the third column of the table
         acceptingStatesList = [ stateId | (className, _, val) <- table
@@ -46,15 +49,17 @@ fromEquivalenceTable table =
             [ ((classToState Map.! s, head t), classToState Map.! s')
                 | (s, t, _) <- table  -- (s: current state, t: transition string, _: accepting flag)
                 , not (null t)        -- Only consider non-epsilon transitions
+                , t /= [epsilonSymbol] -- Exclude self-loops on epsilon
                 , let s' = findNextState s t
                 , Map.member s' classToState -- Ensure the target state exists
             ]
 
         -- Function to find the next state based on the current state and transition string
         findNextState :: String -> String -> String
-        findNextState s t = -- u concatenated with γ should map to the correct state
-            let nextPrefix = s ++ [head t]  -- Simulating a DFA transition
-            in head [u' | (u', _, _) <- table, u' == nextPrefix]
+        findNextState s t =
+            case [s'' | (s'', t', _) <- table, s == s'' && t == t'] of
+                (s':_) -> s'  -- Return the first matching next state
+                _ -> error $ "No matching state found for state " ++ s ++ " and transition " ++ t
 
         -- Construct the transition map
         transitions = Map.fromList transitionsList
@@ -66,6 +71,5 @@ fromEquivalenceTable table =
         , initialState = initialStateId
         , acceptingStates = acceptingStatesList
         }
-
---[("", "a", 0), ("a", "", 1)]
---[("", "a", 0), ("a", "b", 1), ("ab", "", 0)]
+--[("E", "a", 0), ("a", "E", 1)]
+--[("E", "a", 0), ("a", "b", 1), ("ab", "E", 0)]

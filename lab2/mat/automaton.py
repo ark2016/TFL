@@ -1,5 +1,6 @@
+from graphviz import Digraph
 from pyformlang.finite_automaton import DeterministicFiniteAutomaton
-from generate import *
+
 
 
 def convert_Automat_to_dict(automat: DeterministicFiniteAutomaton):

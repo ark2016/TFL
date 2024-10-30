@@ -2,8 +2,10 @@ from random import randint
 import requests
 import json
 
+# Глобальные переменные для URL-адресов
+CHECK_WORD_URL = "http://127.0.0.1:8095/checkWord"
+CHECK_TABLE_URL = "http://127.0.0.1:8095/checkTable"
 
-# Класс для обращениѝ к мату Реликта (Для тестированиѝ базовой версии)
 class RelictMatQueryModel:
     def __init__(self):
         self.result = "1"
@@ -18,7 +20,7 @@ class RelictMatQueryModel:
         }
         try:
             response = requests.post(
-                "http://127.0.0.1:8095/checkWord", 
+                CHECK_WORD_URL, 
                 data=json.dumps(query_body), 
                 headers={"Content-Type": "application/json"}
             )
@@ -37,7 +39,7 @@ class RelictMatQueryModel:
         }
         try:
             response = requests.post(
-                "http://127.0.0.1:8095/checkTable", 
+                CHECK_TABLE_URL, 
                 data=json.dumps(query_body), 
                 headers={"Content-Type": "application/json"}
             )

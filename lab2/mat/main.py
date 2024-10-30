@@ -1,5 +1,7 @@
-from automaton import *
 import subprocess
+
+from lab2.mat.automaton import convert_Automat_to_dict, save_to_file, visualize_dfa
+from lab2.mat.generate import AutomatGenerator
 
 
 def interact_with_mat(automaton):
@@ -48,7 +50,7 @@ def interact_with_mat(automaton):
                 print(f"Result: {'Equivalent' if result == '1' else 'Not equivalent'}")
             elif option == "3":
                 result = process.stdout.readline().strip()
-                visualize_dfa(automaton,"lab2")
+                visualize_dfa(automaton, "lab2")
                 print("Visualization completed")
             else:
                 result = process.stdout.readline().strip()

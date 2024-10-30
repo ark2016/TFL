@@ -37,6 +37,16 @@ class AutomatGenerator:
         self.lbr3_Automat = self.gen_random_lbr3_Automat()
         self.rbr3_Automat = self.gen_random_rbr3_Automat()
 
+
+    def __read_parametrs(self, filename: str = "parameters.txt"):
+        f = open(filename, 'r')
+        l1 = f.readline()
+        maxLenth = int(l1.strip().replace(' ', '').split('=')[1])
+        l2 = f.readline()
+        maxNesting = int(l2.strip().replace(' ', '').split('=')[1])
+
+        return maxLenth, maxNesting
+
     def generate_dfa(self, input_string, condition, state_name):
         """
         Генерирует ДКА на основе заданной строки и условия.

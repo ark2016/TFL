@@ -12,10 +12,9 @@ import qualified Data.Map as Map
 -- Main function
 main :: IO ()
 main = do
-    -- Read the automaton from the file
-    automatonText <- readFile "Automaton.txt"
+    path <- getLine --Automaton.txt
+    automatonText <- readFile path
     let automaton = read automatonText :: Automaton
-    --let automaton = generateRandomAutomaton 1
     mainLoop automaton
 
 -- Main loop to handle user interactions

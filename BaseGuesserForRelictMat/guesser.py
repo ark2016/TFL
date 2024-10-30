@@ -2,6 +2,7 @@ from random import randint
 import requests
 import json
 
+
 # Класс для обращениѝ к мату Реликта (Для тестированиѝ базовой версии)
 class RelictMatQueryModel:
     def __init__(self):
@@ -130,7 +131,7 @@ class LStarAlgorithm:
                 self.extend_table()
                 continue
 
-            # Шаг 3: equal query
+            # Шаг 3: проверка на эквивалентность
             hypothesis = self.build_hypothesis()
             equivalent, counterexample = self.mat.equivalenceQuery(*hypothesis)
             if equivalent == 2:

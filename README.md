@@ -1,7 +1,10 @@
 # Ветка угадывателя Еделькина Германа IU9-51B
 
 
-## Папка  `BaseGuesserForRelictMat` (содержит реализации угадывателя для МАТа от Relict (вариант 1))
+### Папка  `BaseGuesserForRelictMat` (содержит реализации угадывателя для МАТа от Relict (вариант 1))
+
+Вариант 1 был сделан для того, чтобы задание было сделано в дедлайн, так как мат текущего варианта очень сильно задержался
 
 сейчас готовы:
-* `BaseGuesserForRelictMat\guesser.py` - реализация стандартного L* на python
+* `BaseGuesserForRelictMat\guesser.py` - реализация угадывателя на python
+* `BaseGuesserForRelictMat\guesser.cpp` - реализация угадывателя на c++

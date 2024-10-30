@@ -103,7 +103,9 @@
     "cinttypes": "cpp",
     "typeinfo": "cpp",
     "valarray": "cpp",
-    "chrono": "cpp"
+    "chrono": "cpp",
+    "ctime": "cpp",
+    "ratio": "cpp"
   },
   "cmake.sourceDirectory": "D:/VsCode/TFL/BaseGuesserForRelictMat"
   

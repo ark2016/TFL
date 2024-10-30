@@ -114,22 +114,24 @@ public:
         while (true) {
             // Проверка на замкнутость
             bool closed;
-            std::string s1, a;
-            std::tie(closed, s1, a) = isClosed();
-            if (!closed) {
-                S.push_back(s1 + a);
-                extendTable();
-                continue;
+            while (!closed) {
+                std::string s1, a;
+                std::tie(closed, s1, a) = isClosed();
+                if (!closed) {
+                    S.push_back(s1 + a);
+                    extendTable();
+                }
             }
 
             // Проверка на противоречивость
             bool consistent;
-            std::string s1_c, s2_c, a_c, e_c;
-            std::tie(consistent, s1_c, s2_c, a_c, e_c) = isConsistent();
-            if (!consistent) {
-                E.push_back(a_c + e_c);
-                extendTable();
-                continue;
+            while (!consistent) {
+                std::string s1_c, s2_c, a_c, e_c;
+                std::tie(consistent, s1_c, s2_c, a_c, e_c) = isConsistent();
+                if (!consistent) {
+                    E.push_back(a_c + e_c);
+                    extendTable();
+                }
             }
 
             // Построении гипотизы

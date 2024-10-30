@@ -29,9 +29,9 @@ mainLoop automaton = do
         "2" -> do
             checkAutomatonEquivalence automaton
             mainLoop automaton
-        "3" -> do
-            visualizeAutomaton automaton
-            mainLoop automaton
+--        "3" -> do
+--            visualizeAutomaton automaton
+--            mainLoop automaton
         "4" -> putStrLn "Exiting."
         _   -> do
             putStrLn "Invalid option. Please try again."

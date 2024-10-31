@@ -1,7 +1,7 @@
 import subprocess
 
-from lab2.mat.automaton import convert_Automat_to_dict, save_to_file, visualize_dfa
-from lab2.mat.generate import AutomatGenerator
+from automaton import convert_Automat_to_dict, save_to_file, visualize_dfa
+from generate import AutomatGenerator
 
 
 def interact_with_mat(automaton):

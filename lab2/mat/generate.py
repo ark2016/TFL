@@ -17,8 +17,11 @@ from pyformlang.finite_automaton import DeterministicFiniteAutomaton, State, Sym
 
 
 class AutomatGenerator:
-    def __init__(self, name: str):
+    def __init__(self, name: str, maxSize: int, maxNesting: int):
         self.name = name
+        self.maxSize = maxSize
+        self.maxNesting = maxNesting
+
         # сразу создаем автоматы для лексем
         self.const_Automat = self.gen_random_const_Automat()
         self.var_Automaton = self.gen_random_var_Automat()
@@ -36,16 +39,6 @@ class AutomatGenerator:
 
         self.lbr3_Automat = self.gen_random_lbr3_Automat()
         self.rbr3_Automat = self.gen_random_rbr3_Automat()
-
-
-    def __read_parametrs(self, filename: str = "parameters.txt"):
-        f = open(filename, 'r')
-        l1 = f.readline()
-        maxLenth = int(l1.strip().replace(' ', '').split('=')[1])
-        l2 = f.readline()
-        maxNesting = int(l2.strip().replace(' ', '').split('=')[1])
-
-        return maxLenth, maxNesting
 
     def generate_dfa(self, input_string, condition, state_name):
         """
@@ -80,104 +73,93 @@ class AutomatGenerator:
 
     def gen_random_eol_Automat(self):
         input_string = "0"
-        count0 = random.randint(2, 10)
+        count0 = random.randint(2, self.maxSize)
         condition = {"0": count0}
         dfa = self.generate_dfa(input_string, condition, "EOL")
         return dfa
 
     def gen_random_blank_Automat(self):
         input_string = "1"
-        count1 = random.randint(2, 10)
+        count1 = random.randint(2, self.maxSize)
         condition = {"1": count1}
         dfa = self.generate_dfa(input_string, condition, "B")
         return dfa
 
-    def gen_random_const_Automat(self):
-        # Создаём ДКА
-        dfa = DeterministicFiniteAutomaton()
-
-        # Определяем единственное состояние
-        state = State("C0")
-
-        # Добавляем состояние как начальное и конечное
-        dfa.add_start_state(state)
-        dfa.add_final_state(state)
-
-        # Добавляем переходы для символов '0', '1', и '2'
-        dfa.add_transition(state, Symbol('2'), state)
-
-        return dfa
-
-    def gen_random_var_Automat(self):
-        # Создаём ДКА
-        dfa = DeterministicFiniteAutomaton()
-
-        # Определяем единственное состояние
-        state = State("V0")
-
-        # Добавляем состояние как начальное и конечное
-        dfa.add_start_state(state)
-        dfa.add_final_state(state)
-
-        # Добавляем переходы для символов 'a', 'b', и 'c'
-        dfa.add_transition(state, Symbol('c'), state)
-        return dfa
-
-    def gen_random_lbr1_Automat(self):
-        dfa = DeterministicFiniteAutomaton()
-        input_string = "0a"
-        count0, countA = random.randint(1, 5), random.randint(2, 6)
-        condition = {"0": count0, "a": countA}
-        dfa = self.generate_dfa(input_string, condition, "lbr1")
-        return dfa
-
-    def gen_random_rbr1_Automat(self):
-        input_string = "0b"
-        count0, countB = random.randint(1, 5), random.randint(2, 6)
-        condition = {"0": count0, "b": countB}
-        dfa = self.generate_dfa(input_string, condition, "rbr1")
-        return dfa
-
     def gen_random_equal_Automat(self):
-        dfa = DeterministicFiniteAutomaton()
-        input_string = "a2cb"
-        countA, countB, count2, countC = random.randint(1, 5), random.randint(2, 6), random.randint(1, 6), random.randint(1, 6)
-        condition = {"a": countA, "b": countB, "2": count2, "c": countC}
+        input_string = "2"
+        count2 = random.randint(2, self.maxSize)
+        condition = {"2": count2}
         dfa = self.generate_dfa(input_string, condition, "EQ")
         return dfa
 
     def gen_random_sep_Automat(self):
-        input_string = "b2ca"
-        countA, countB, count2, countC = random.randint(1, 5), random.randint(2, 6), random.randint(1, 6), random.randint(1, 6)
-        condition = {"a": countA, "b": countB, "2": count2, "c": countC}
+        input_string = "a"
+        countA = random.randint(2, self.maxSize)
+        condition = {"a": countA}
         dfa = self.generate_dfa(input_string, condition, "SEP")
         return dfa
 
+    def gen_random_const_Automat(self):
+        input_string = "bccb"
+        max = self.maxSize // 4
+        countB, countC = random.randint(1, max), random.randint(1, max)
+        condition = {"b": countB, "c": countC}
+        dfa = self.generate_dfa(input_string, condition, "C")
+        return dfa
+
+    def gen_random_var_Automat(self):
+        input_string = "cbbc"
+        max = self.maxSize // 4
+        countB, countC = random.randint(1, max), random.randint(1, max)
+        condition = {"b": countB, "c": countC}
+        dfa = self.generate_dfa(input_string, condition, "V")
+        return dfa
+
+    def gen_random_lbr1_Automat(self):
+        input_string = "bbbc"
+        max = self.maxSize // 4
+        countB, countC = random.randint(1, max), random.randint(1, max)
+        condition = {"b": countB, "c": countC}
+        dfa = self.generate_dfa(input_string, condition, "lbr1")
+        return dfa
+
+    def gen_random_rbr1_Automat(self):
+        input_string = "cbcc"
+        max = self.maxSize // 4
+        countB, countC = random.randint(1, max), random.randint(1, max)
+        condition = {"b": countB, "c": countC}
+        dfa = self.generate_dfa(input_string, condition, "rbr1")
+        return dfa
+
     def gen_random_lbr2_Automat(self):
-        input_string = "2c"
-        count2, countC = random.randint(1, 5), random.randint(2, 6)
-        condition = {"2": count2, "c": countC}
+        input_string = "cccb"
+        max = self.maxSize // 4
+        countB, countC = random.randint(1, max), random.randint(1, max)
+        condition = {"b": countB, "c": countC}
         dfa = self.generate_dfa(input_string, condition, "lbr2")
         return dfa
 
     def gen_random_rbr2_Automat(self):
-        input_string = "2b"
-        count2, countB = random.randint(1, 5), random.randint(2, 6)
-        condition = {"2": count2, "b": countB}
+        input_string = "bcbb"
+        max = self.maxSize // 4
+        countB, countC = random.randint(1, max), random.randint(1, max)
+        condition = {"b": countB, "c": countC}
         dfa = self.generate_dfa(input_string, condition, "rbr2")
         return dfa
 
     def gen_random_lbr3_Automat(self):
-        input_string = "2a"
-        count2, countA = random.randint(1, 5), random.randint(2, 6)
-        condition = {"2": count2, "a": countA}
+        input_string = "ccbc"
+        max = self.maxSize // 4
+        countB, countC = random.randint(1, max), random.randint(1, max)
+        condition = {"b": countB, "c": countC}
         dfa = self.generate_dfa(input_string, condition, "lbr3")
         return dfa
 
     def gen_random_rbr3_Automat(self):
-        input_string = "2b"
-        count2, countB = random.randint(1, 5), random.randint(2, 6)
-        condition = {"2": count2, "b": countB}
+        input_string = "bbcb"
+        max = self.maxSize // 4
+        countB, countC = random.randint(1, max), random.randint(1, max)
+        condition = {"b": countB, "c": countC}
         dfa = self.generate_dfa(input_string, condition, "rbr3")
         return dfa
 
@@ -272,8 +254,8 @@ class AutomatGenerator:
 
         :return:
         """
-        pattern = self.gen_random_pattern_Automat()
-        expression = self.gen_random_expression_Automat()
+        pattern = self.gen_random_pattern_Automat(max_depth=self.maxNesting)
+        expression = self.gen_random_expression_Automat(max_depth=self.maxNesting)
 
         # Соединяем все части вместе
         pattern_equal = self.__connectDFA1_to_DFA2(pattern, self.equal_Automat)
@@ -298,9 +280,9 @@ class AutomatGenerator:
         # Переходы для eol* sentence
         eol_kleene: EpsilonNFA = self.eol_Automat.kleene_star()  # пока не используем
 
-        eol_kleene: DeterministicFiniteAutomaton = self.eol_Automat
+        eol_kleene_dka: DeterministicFiniteAutomaton = eol_kleene.to_deterministic()
 
-        middle_dka = self.__connectDFA1_to_DFA2(eol_kleene, sentence)
+        middle_dka = self.__connectDFA1_to_DFA2(eol_kleene_dka, sentence)
 
         # Переходы для (eol* sentence)*
         # middle_nfa = middle_nfa.kleene_star()
@@ -311,7 +293,7 @@ class AutomatGenerator:
         definition_middle_dka = self.__connectDFA1_to_DFA2(definition_dka, middle_kleene_dka)
 
         # Добавляем eol и rbr в конце
-        definition_middle_eol_dka = self.__connectDFA1_to_DFA2(definition_middle_dka, eol_kleene)
+        definition_middle_eol_dka = self.__connectDFA1_to_DFA2(definition_middle_dka, eol_kleene_dka)
         newDKA6 = self.__connectDFA1_to_DFA2(definition_middle_eol_dka, self.rbr1_Automat)
 
         return newDKA6
@@ -328,17 +310,19 @@ class AutomatGenerator:
         eol_nfa: EpsilonNFA = self.eol_Automat.kleene_star()
 
         eol = eol_nfa.to_deterministic()
+        eol_plus =  self.__connectDFA1_to_DFA2(self.eol_Automat, eol)
 
         # Создаем автомат для ([definition][eol]+)+
-        # пока eol без +
-        definition_eol_dka = self.__connectDFA1_to_DFA2(definition_automaton, eol)
+        definition_eol_dka = self.__connectDFA1_to_DFA2(definition_automaton, eol_plus)
 
         # ([definition][eol]+)+
-        # тоже пока без +
-        # definition_eol_nfa = definition_eol_nfa.plus()
+        definition_eol_nfa_star = definition_eol_dka.kleene_star()
+        definition_eol_dka_star_dka = definition_eol_nfa_star.to_deterministic()
+
+        definition_eol_dka_plus = self.__connectDFA1_to_DFA2(definition_eol_dka, definition_eol_dka_star_dka)
 
         # Добавляем ([definition][eol]+)+ к [eol]*
-        dfa = self.__connectDFA1_to_DFA2(eol, definition_eol_dka)
+        dfa = self.__connectDFA1_to_DFA2(eol, definition_eol_dka_plus)
 
         return dfa
 
@@ -367,6 +351,49 @@ class AutomatGenerator:
         # Добавляем переходы
         for from_state, symbol, to_state in dfa:
             new_dfa.add_transition(state_mapping[from_state], symbol, state_mapping[to_state])
+
+        return new_dfa
+
+    def __canonical_numbering_dfa(self, dfa):
+        """
+        Возвращает новый DFA с канонически пронумерованными состояниями.
+        """
+        # Начинаем с обхода от начального состояния
+        start_state = next(iter(dfa.start_states))
+        queue = [start_state]
+        visited = set([start_state])
+
+        # Словарь для соответствия оригинальных состояний новым
+        canonical_states = {start_state: State(0)}
+        current_number = 1
+
+        # Создаем новый ДКА с канонической нумерацией состояний
+        new_dfa = DeterministicFiniteAutomaton()
+        new_dfa.add_start_state(canonical_states[start_state])
+
+        # Обход в ширину и создание нового автомата
+        while queue:
+            state = queue.pop(0)
+            new_state = canonical_states[state]
+
+            # Проверка переходов для каждого символа алфавита
+            for symbol in dfa.symbols:
+                next_states = dfa(state, symbol)
+                if next_states:
+                    next_state = next_states.pop()
+                    if next_state not in visited:
+                        visited.add(next_state)
+                        canonical_states[next_state] = State(current_number)
+                        current_number += 1
+                        queue.append(next_state)
+
+                    # Добавляем переход в новый ДКА
+                    new_dfa.add_transition(new_state, symbol, canonical_states[next_state])
+
+        # Устанавливаем конечные состояния
+        for state in dfa.final_states:
+            if state in canonical_states:
+                new_dfa.add_final_state(canonical_states[state])
 
         return new_dfa
 
@@ -437,6 +464,6 @@ class AutomatGenerator:
                 newDFA.add_transition(state, symbol, to_state)
 
         # перенумеровываем состояния в едином стиле
-        renumbered_DFA = self.__canonical_numbering(newDFA.to_deterministic(), "q")
+        renumbered_DFA = self.__canonical_numbering_dfa(newDFA.to_deterministic())
 
         return renumbered_DFA

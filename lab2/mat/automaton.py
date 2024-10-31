@@ -2,7 +2,6 @@ from graphviz import Digraph
 from pyformlang.finite_automaton import DeterministicFiniteAutomaton
 
 
-
 def convert_Automat_to_dict(automat: DeterministicFiniteAutomaton):
     automat_dict = {
         "states": automat.states,
@@ -20,24 +19,24 @@ def convert_to_haskell_str(automat_dict: dict):
     states = []
     for elem in states_srt:
         elem = str(elem)
-        state = int(elem[1:])
+        state = int(elem)
         states.append(state)
     alphabet = list(automat_dict["albhabet"])
     alphabet_str = ""
     for el in alphabet:
         alphabet_str += str(el)
-    start_state = int(str(automat_dict["start_state"])[1:])
+    start_state = int(str(automat_dict["start_state"]))
     final_states_str = list(automat_dict["final_states"])
     final_states = []
     for elem in final_states_str:
         elem = str(elem)
-        state = int(elem[1:])
+        state = int(elem)
         final_states.append(state)
     transuctions_dict: dict = automat_dict["transictions"]
     transuctions_list = []
 
     for item in transuctions_dict.items():
-        transuctions_list.append(((int(item[0][0][1:]), item[0][1]), int(item[1][0][0][1:])))
+        transuctions_list.append(((int(item[0][0]), item[0][1]), int(item[1][0][0])))
 
     haskel_str = "Automaton {states = " + f"{states}, alphabet = \"{alphabet_str}\", transitions = fromList {transuctions_list}, initialState = {start_state}, acceptingStates = {final_states}" + "}"
 
@@ -47,7 +46,7 @@ def convert_to_haskell_str(automat_dict: dict):
 def save_to_file(filename: str, automat_dict: dict):
     with open(filename, "w") as file:
         # stroka = "Automaton " + automat_dict.__str__()
-        stroka = convert_to_haskell_str(automat_dict)#.replace("E", "").replace("\'\'", "\"\"")
+        stroka = convert_to_haskell_str(automat_dict)  # .replace("E", "").replace("\'\'", "\"\"")
         file.write(stroka)
 
 
@@ -109,3 +108,13 @@ def visualize_dfa(dfa, name):
 
     # Рендерим и сохраняем в файл
     dot.render(f'{name}', view=True)
+
+
+def read_parametrs(filename: str = "parameters.txt"):
+    f = open(filename, 'r')
+    l1 = f.readline()
+    maxLenth = int(l1.strip().replace(' ', '').split('=')[1])
+    l2 = f.readline()
+    maxNesting = int(l2.strip().replace(' ', '').split('=')[1])
+
+    return maxLenth, maxNesting

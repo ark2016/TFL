@@ -1,0 +1,7 @@
+version: '3'
+services:
+  mat_api:
+    build: ./mat
+    container_name: mat_api
+    ports:
+      - "8900:8000"

@@ -81,7 +81,7 @@ def get_automat_info(automat):
     return info
 
 
-def visualize_dfa(dfa, name):
+def dfa_to_dot(dfa):
     dot = Digraph(comment='The Round Table')
 
     # Добавляем состояния
@@ -105,9 +105,18 @@ def visualize_dfa(dfa, name):
                     dot.edge(str(from_state), str(to_state1), label=str(symbol))
             else:
                 dot.edge(str(from_state), str(to_state), label=str(symbol))
+    return dot
 
+
+def dfa_to_dot_str(dfa):
+    dot = dfa_to_dot(dfa)
+    return dot.source
+
+
+def visualize_dfa(dfa, name):
+    dot: Digraph = dfa_to_dot(dfa)
     # Рендерим и сохраняем в файл
-    dot.render(f'{name}', view=True)
+    dot.render(f'{name}', view=False)
 
 
 def read_parametrs(filename: str = "parameters.txt"):

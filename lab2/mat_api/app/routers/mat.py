@@ -1,7 +1,9 @@
 from fastapi import APIRouter
+from fastapi.responses import FileResponse
 from pyformlang.finite_automaton import DeterministicFiniteAutomaton
 
-from ..mat.automaton import save_to_file, read_parametrs, convert_Automat_to_dict, automat_to_dot
+from ..mat.automaton import save_to_file, read_parametrs, convert_Automat_to_dict, automat_to_dot, visualize_dfa, \
+    dfa_to_dot_str
 from ..mat.generate import AutomatGenerator
 from ..utils import start_haskel_mat
 
@@ -16,6 +18,7 @@ automat_generator = AutomatGenerator("lab2", maxSize=maxSize, maxNesting=maxNest
 
 @mat.get("/generate")
 def generate():
+    global automat
     automat = automat_generator.gen_random_program_Automat()
     automat_dict = convert_Automat_to_dict(automat)
     save_to_file("app/output/automaton.txt", automat_dict)
@@ -55,4 +58,5 @@ def check_equiv(eq_table: str):
 
 @mat.get("/dot_automat")
 def dot_automat():
-    return {"dot": automat_to_dot(automat)}
+    dot_str = dfa_to_dot_str(automat)
+    return {"dot": dot_str}

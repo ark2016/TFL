@@ -1,9 +1,13 @@
+import os
 import subprocess
 
 
 def start_haskel_mat(file_path: str = "app/output/automaton.txt"):
+    # Абсолютный путь до текущего файла
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(current_dir, 'mat_linux')
     process = subprocess.Popen(
-        ['./mat_linux'],
+        ['./app/mat_linux'],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         text=True,

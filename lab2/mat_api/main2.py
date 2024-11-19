@@ -1,7 +1,7 @@
 import subprocess
 
-from automaton import convert_Automat_to_dict, save_to_file, visualize_dfa, read_parametrs
-from generate import AutomatGenerator
+from lab2.mat_api.app.mat.automaton import convert_Automat_to_dict, save_to_file, visualize_dfa, read_parametrs
+from lab2.mat_api.app.mat.generate import AutomatGenerator
 
 
 def interact_with_mat(automaton):
@@ -70,5 +70,5 @@ if __name__ == "__main__":
     automat_generator = AutomatGenerator("lab2", maxSize=maxSize, maxNesting=maxNesting)
     automat = automat_generator.gen_random_program_Automat()
     automat_dict = convert_Automat_to_dict(automat)
-    save_to_file("automaton.txt", automat_dict)
+    save_to_file("app/output/automaton.txt", automat_dict)
     interact_with_mat(automat)

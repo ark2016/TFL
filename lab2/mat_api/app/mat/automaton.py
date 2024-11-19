@@ -50,18 +50,18 @@ def save_to_file(filename: str, automat_dict: dict):
         file.write(stroka)
 
 
-def automat_to_dot(self):
+def automat_to_dot(automat: DeterministicFiniteAutomaton):
     dot = Digraph(comment='DFA')
 
     # Добавление состояний
-    for state in self.states:
-        if state in self.final_states:
-            dot.node(state, state, shape='doublecircle')  # Конечное состояние
+    for state in automat.states:
+        if state in automat.final_states:
+            dot.node(str(state), str(state), shape='doublecircle')  # Конечное состояние
         else:
-            dot.node(state, state, shape='circle')  # Обычное состояние
+            dot.node(str(state), str(state), shape='circle')  # Обычное состояние
 
     # Добавление переходов
-    for state, transitions in self.transition.items():
+    for state, transitions in automat.to_fst().transitions.items():
         for symbol, next_state in transitions.items():
             dot.edge(state, next_state, label=symbol)
 

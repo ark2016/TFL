@@ -12,10 +12,4 @@ app = FastAPI(
     version="0.0.1",
 )
 
-
-@app.get("/")
-def root():
-    return {"message": "Hello World"}
-
-
 app.include_router(mat)

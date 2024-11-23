@@ -35,7 +35,6 @@ def check_string(test_string: str):
 
     process.terminate()
 
-    print(result)
     if result == '1':
         return {"Accepted": True}
     return {"Accepted": False}
@@ -50,13 +49,39 @@ def check_equiv(eq_table: str):
     result = process.stdout.readline().strip()
 
     process.terminate()
-    print(result)
     if result == '1':
         return {"equivalence": True}
     return {"equivalence": False}
 
 
 @mat.get("/dot_automat")
-def dot_automat():
-    dot_str = dfa_to_dot_str(automat)
-    return {"dot": dot_str}
+def dot_automat(type: str):
+    if type == "eol":
+        automata = automat_generator.eol_Automat
+    elif type == "blank":
+        automata = automat_generator.blank_Automat
+    elif type == "equal":
+        automata = automat_generator.equal_Automat
+    elif type == "const":
+        automata = automat_generator.const_Automat
+    elif type == "var":
+        automata = automat_generator.var_Automaton
+    elif type == "sep":
+        automata = automat_generator.sep_Automat
+    elif type == "lbr1":
+        automata = automat_generator.lbr1_Automat
+    elif type == "rbr1":
+        automata = automat_generator.rbr1_Automat
+    elif type == "lbr2":
+        automata = automat_generator.lbr2_Automat
+    elif type == "rbr2":
+        automata = automat_generator.rbr2_Automat
+    elif type == "lbr3":
+        automata = automat_generator.lbr3_Automat
+    elif type == "rbr3":
+        automata = automat_generator.rbr3_Automat
+    else:
+        automata = automat
+
+    dot_str = dfa_to_dot_str(automata)
+    return {"type": type,"dot": dot_str}

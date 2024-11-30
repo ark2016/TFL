@@ -1,5 +1,9 @@
 FROM python:3.10-slim
 
+
+# Install Graphviz
+RUN apt-get update && apt-get install -y graphviz
+
 #
 WORKDIR /api
 

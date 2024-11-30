@@ -26,7 +26,7 @@ def generate():
 
 @mat.post("/check_string")
 def check_string(test_string: str):
-    process = start_haskel_mat()
+    process = start_haskel_mat(option=1)
 
     process.stdin.write(f"{test_string}\n")
     process.stdin.flush()
@@ -42,14 +42,14 @@ def check_string(test_string: str):
 
 @mat.post("/check_equivalence")
 def check_equiv(eq_table: str):
-    process = start_haskel_mat()
+    process = start_haskel_mat(option=2)
 
     process.stdin.write(f"{eq_table}\n")
     process.stdin.flush()
     result = process.stdout.readline().strip()
 
     process.terminate()
-    if result == '1':
+    if result == "":
         return {"equivalence": True}
     return {"equivalence": result}
 
@@ -88,13 +88,25 @@ def dot_automat(type: str):
 
 
 @mat.get("/file", response_class=FileResponse)
-def root_html():
+def generate_dot():
     path = "output/prog"
     visualize_dfa(automat, path)
     return "output/prog"
 
 @mat.get("/image", response_class=FileResponse)
-def root_html1():
+def generate_image():
     path = "output/prog"
     visualize_dfa(automat, path)
+    return "output/prog.pdf"
+
+@mat.get("/image1", response_class=FileResponse)
+def generate_image1(type: str):
+    if type == "eol":
+        automata = automat_generator.eol_Automat
+    elif type == "blank":
+        automata = automat_generator.blank_Automat
+    else:
+        automata = automat
+    path = "output/prog"
+    visualize_dfa(automata, path)
     return "output/prog.pdf"

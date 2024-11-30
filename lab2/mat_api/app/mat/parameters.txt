@@ -1,2 +1,2 @@
-maximumlength = 10
-maximum_nesting_of_parentheses = 10
+maximumlength = 5
+maximum_nesting_of_parentheses = 3

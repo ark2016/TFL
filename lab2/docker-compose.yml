@@ -1,6 +1,7 @@
 version: '3'
 services:
   mat_api:
+    platform: linux/amd64
     build: mat_api
     container_name: mat_api
     ports:

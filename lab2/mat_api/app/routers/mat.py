@@ -1,9 +1,8 @@
 from fastapi import APIRouter
-from fastapi.responses import FileResponse
 from pyformlang.finite_automaton import DeterministicFiniteAutomaton
+from starlette.responses import FileResponse
 
-from ..mat.automaton import save_to_file, read_parametrs, convert_Automat_to_dict, automat_to_dot, visualize_dfa, \
-    dfa_to_dot_str
+from ..mat.automaton import save_to_file, read_parametrs, convert_Automat_to_dict, dfa_to_dot_str, visualize_dfa
 from ..mat.generate import AutomatGenerator
 from ..utils import start_haskel_mat
 
@@ -35,9 +34,10 @@ def check_string(test_string: str):
 
     process.terminate()
 
-    if result == '1':
-        return {"Accepted": True}
-    return {"Accepted": False}
+    # if result == '1':
+    #  return {"Accepted": True}
+    # return {"Accepted": False}
+    return {"result": result}
 
 
 @mat.post("/check_equivalence")
@@ -51,7 +51,7 @@ def check_equiv(eq_table: str):
     process.terminate()
     if result == '1':
         return {"equivalence": True}
-    return {"equivalence": False}
+    return {"equivalence": result}
 
 
 @mat.get("/dot_automat")
@@ -84,4 +84,17 @@ def dot_automat(type: str):
         automata = automat
 
     dot_str = dfa_to_dot_str(automata)
-    return {"type": type,"dot": dot_str}
+    return {"type": type, "dot": dot_str}
+
+
+@mat.get("/file", response_class=FileResponse)
+def root_html():
+    path = "output/prog"
+    visualize_dfa(automat, path)
+    return "output/prog"
+
+@mat.get("/image", response_class=FileResponse)
+def root_html1():
+    path = "output/prog"
+    visualize_dfa(automat, path)
+    return "output/prog.pdf"

@@ -1,8 +1,6 @@
 import random
 
-from graphviz import Digraph
-from pyformlang.finite_automaton import DeterministicFiniteAutomaton, State, Symbol, epsilon, \
-    NondeterministicFiniteAutomaton, EpsilonNFA, FiniteAutomaton, Epsilon
+from pyformlang.finite_automaton import DeterministicFiniteAutomaton, State, Symbol, EpsilonNFA, Epsilon
 
 # грамматика
 """
@@ -433,17 +431,9 @@ class AutomatGenerator:
 
             for state_transicton in to_states:
                 to_state = State(state_transicton[0])
-                """
-                if to_state in finalStates1:
-                    if to_state == startState1:
-                        to_state = startState1
-                        newDFA.add_transition(to_state, Symbol('E'), startState2)
-                    else:
-                        to_state = startState2
-                """
                 newDFA.add_transition(from_state, symbol, to_state)
 
-        # соединяем финальные сотояния первого со стартовыми второго
+        # соединяем финальные соcтояния первого со стартовыми второго
         # E - epsilon переход
         # print(epsilon)
         for state in finalStates1:

@@ -1,0 +1,42 @@
+name:                lab3
+version:             0.1.0.0
+-- other fields omitted for brevity
+cabal-version:       >=1.10
+build-type:          Simple
+
+-- Library section
+library
+  hs-source-dirs:      src
+  exposed-modules:     Grammar
+  build-depends:       base >=4.7 && <5
+  default-language:    Haskell2010
+
+-- Test suite section
+test-suite lab3-test-suite
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Spec.hs
+  build-depends:       base >=4.7 && <5
+                     , hspec >= 2.7.0
+                     , lab3
+  build-tool-depends:  hspec-discover:hspec-discover
+  other-modules:       GrammarSpec
+  default-language:    Haskell2010
+
+-- Executable for Main.hs
+executable fuzzModule
+  -- Entry point for the executable
+  main-is:             Main.hs
+
+  -- Source directory for Main.hs and other modules
+  hs-source-dirs:      src
+
+  -- Dependencies for the executable
+  build-depends:       base >=4.7 && <5
+                     , lab3
+
+  -- Add the missing modules here
+  other-modules:       Grammar
+
+  -- Set the default language
+  default-language:    Haskell2010

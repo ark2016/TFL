@@ -1,5 +1,6 @@
 import random
 
+import rstr
 from pyformlang.finite_automaton import DeterministicFiniteAutomaton, State, Symbol, EpsilonNFA, Epsilon
 
 # грамматика
@@ -20,6 +21,10 @@ class AutomatGenerator:
         self.maxSize = maxSize
         self.maxNesting = maxNesting
 
+        self._alphabet = {'a', 'b', 'c', '0', '1', '2'}
+        self._eol_alphabet = None
+        self._blank_alphabet = None
+
         # сразу создаем автоматы для лексем
         self.const_Automat = self.gen_random_const_Automat()
         self.var_Automaton = self.gen_random_var_Automat()
@@ -38,15 +43,9 @@ class AutomatGenerator:
         self.lbr3_Automat = self.gen_random_lbr3_Automat()
         self.rbr3_Automat = self.gen_random_rbr3_Automat()
 
-    def generate_dfa(self, input_string, condition, state_name):
-        """
-        Генерирует ДКА на основе заданной строки и условия.
+        self.check, self.check_list = self.check_intersections()
 
-        :param state_name:
-        :param input_string: строка, на основе которой строится ДКА.
-        :param condition: словарь с условиями (символ: количество повторений).
-        :return: объект DeterministicFiniteAutomaton, представляющий сгенерированный ДКА.
-        """
+    def generate_dfa(self, input_string, state_name):
         dfa = DeterministicFiniteAutomaton()
         previous_state = State(f"{state_name}0")
         dfa.add_start_state(previous_state)
@@ -55,111 +54,186 @@ class AutomatGenerator:
         state_counter = 0
 
         for symbol in input_string:
-            if symbol not in condition:
-                raise ValueError(f"Условие для символа '{symbol}' не задано.")
-            repetitions = condition[symbol]
-            for _ in range(repetitions):
-                state_counter += 1
-                current_state = State(f"{state_name}{state_counter}")
-                dfa.add_transition(previous_state, Symbol(symbol), current_state)
-                previous_state = current_state
+            state_counter += 1
+            current_state = State(f"{state_name}{state_counter}")
+            dfa.add_transition(previous_state, Symbol(symbol), current_state)
+            previous_state = current_state
 
         # Добавляем конечное состояние
         dfa.add_final_state(previous_state)
 
         return dfa
 
+    def gen_alphabet1(self) -> set[str]:
+        # n1 = random.randint(1, 2)
+        n1 = 1
+        # определяем алфавит для лексемы
+        lexem_alphabet: set[str] = set()
+        for i in range(n1):
+            el = random.choice(list(self._alphabet))
+            lexem_alphabet.add(el)
+            self._alphabet.remove(el)
+        return lexem_alphabet
+
+    def generate_random_string(self, char_set, max_length):
+        length = random.randint(1, max_length)
+        return ''.join(random.choice(list(char_set)) for _ in range(length))
+
     def gen_random_eol_Automat(self):
-        input_string = "0"
-        count0 = random.randint(2, self.maxSize)
-        condition = {"0": count0}
-        dfa = self.generate_dfa(input_string, condition, "EOL")
+        self._eol_alphabet = self.gen_alphabet1()
+        eol_str = self.generate_random_string(self._eol_alphabet, self.maxSize)
+        dfa = self.generate_dfa(eol_str, "EOL")
         return dfa
 
     def gen_random_blank_Automat(self):
-        input_string = "1"
-        count1 = random.randint(2, self.maxSize)
-        condition = {"1": count1}
-        dfa = self.generate_dfa(input_string, condition, "B")
+        self._blank_alphabet = self.gen_alphabet1()
+        blank_str = self.generate_random_string(self._blank_alphabet, self.maxSize)
+        dfa = self.generate_dfa(blank_str, "B")
         return dfa
 
     def gen_random_equal_Automat(self):
-        input_string = "2"
-        count2 = random.randint(2, self.maxSize)
-        condition = {"2": count2}
-        dfa = self.generate_dfa(input_string, condition, "EQ")
+        equal_alphabet_s = self.gen_alphabet1()
+        first_eq_symb = list(equal_alphabet_s)[0]
+        equal_str = first_eq_symb + self.generate_random_string(self._alphabet, self.maxSize - 2) + first_eq_symb
+        dfa = self.generate_dfa(equal_str, "EQ")
         return dfa
 
     def gen_random_sep_Automat(self):
-        input_string = "a"
-        countA = random.randint(2, self.maxSize)
-        condition = {"a": countA}
-        dfa = self.generate_dfa(input_string, condition, "SEP")
+        sep_alphabet_s = self.gen_alphabet1()
+        first_sep_symb = list(sep_alphabet_s)[0]
+        sep_str = first_sep_symb + self.generate_random_string(self._alphabet, self.maxSize - 2) + first_sep_symb
+        dfa = self.generate_dfa(sep_str, "SEP")
         return dfa
 
     def gen_random_const_Automat(self):
-        input_string = "bccb"
-        max = self.maxSize // 4
-        countB, countC = random.randint(1, max), random.randint(1, max)
-        condition = {"b": countB, "c": countC}
-        dfa = self.generate_dfa(input_string, condition, "C")
+        symbols = list(self._alphabet)
+        s1, s2 = symbols[0], symbols[1]
+
+        regex = f"{s1}{s2 * 2}{s1}"
+        input_string = rstr.xeger(regex)
+        dfa = self.generate_dfa(input_string, "C")
         return dfa
 
     def gen_random_var_Automat(self):
-        input_string = "cbbc"
-        max = self.maxSize // 4
-        countB, countC = random.randint(1, max), random.randint(1, max)
-        condition = {"b": countB, "c": countC}
-        dfa = self.generate_dfa(input_string, condition, "V")
+        symbols = list(self._alphabet)
+        s1, s2 = symbols[0], symbols[1]
+
+        regex = f"{s2}{s1 * 2}{s2}"
+        input_string = rstr.xeger(regex)
+        dfa = self.generate_dfa(input_string, "V")
         return dfa
 
     def gen_random_lbr1_Automat(self):
-        input_string = "bbbc"
-        max = self.maxSize // 4
-        countB, countC = random.randint(1, max), random.randint(1, max)
-        condition = {"b": countB, "c": countC}
-        dfa = self.generate_dfa(input_string, condition, "lbr1")
+        symbols = list(self._alphabet)
+        s1, s2 = symbols[0], symbols[1]
+
+        regex = f"{s1 * 3}{s2}"
+        input_string = rstr.xeger(regex)
+
+        dfa = self.generate_dfa(input_string, "lbr1")
         return dfa
 
     def gen_random_rbr1_Automat(self):
-        input_string = "cbcc"
-        max = self.maxSize // 4
-        countB, countC = random.randint(1, max), random.randint(1, max)
-        condition = {"b": countB, "c": countC}
-        dfa = self.generate_dfa(input_string, condition, "rbr1")
+        symbols = list(self._alphabet)
+        s1, s2 = symbols[0], symbols[1]
+
+        regex = f"{s2}{s1}{s2 * 2}"
+        input_string = rstr.xeger(regex)
+
+        dfa = self.generate_dfa(input_string, "rbr1")
         return dfa
 
     def gen_random_lbr2_Automat(self):
-        input_string = "cccb"
-        max = self.maxSize // 4
-        countB, countC = random.randint(1, max), random.randint(1, max)
-        condition = {"b": countB, "c": countC}
-        dfa = self.generate_dfa(input_string, condition, "lbr2")
+        symbols = list(self._alphabet)
+        s1, s2 = symbols[0], symbols[1]
+
+        regex = f"{s2 * 3}{s1}"
+        input_string = rstr.xeger(regex)
+
+        dfa = self.generate_dfa(input_string, "lbr2")
         return dfa
 
     def gen_random_rbr2_Automat(self):
-        input_string = "bcbb"
-        max = self.maxSize // 4
-        countB, countC = random.randint(1, max), random.randint(1, max)
-        condition = {"b": countB, "c": countC}
-        dfa = self.generate_dfa(input_string, condition, "rbr2")
+        symbols = list(self._alphabet)
+        s1, s2 = symbols[0], symbols[1]
+
+        regex = f"{s1}{s2}{s1 * 2}"
+        input_string = rstr.xeger(regex)
+
+        dfa = self.generate_dfa(input_string, "rbr2")
         return dfa
 
     def gen_random_lbr3_Automat(self):
-        input_string = "ccbc"
-        max = self.maxSize // 4
-        countB, countC = random.randint(1, max), random.randint(1, max)
-        condition = {"b": countB, "c": countC}
-        dfa = self.generate_dfa(input_string, condition, "lbr3")
+        symbols = list(self._alphabet)
+        s1, s2 = symbols[0], symbols[1]
+
+        regex = f"{s2 * 2}{s1}{s2}"
+        input_string = rstr.xeger(regex)
+        dfa = self.generate_dfa(input_string, "lbr3")
         return dfa
 
     def gen_random_rbr3_Automat(self):
-        input_string = "bbcb"
-        max = self.maxSize // 4
-        countB, countC = random.randint(1, max), random.randint(1, max)
-        condition = {"b": countB, "c": countC}
-        dfa = self.generate_dfa(input_string, condition, "rbr3")
+        symbols = list(self._alphabet)
+        s1, s2 = symbols[0], symbols[1]
+
+        regex = f"{s1 * 2}{s2}{s1}"
+        input_string = rstr.xeger(regex)
+
+        dfa = self.generate_dfa(input_string, "rbr3")
         return dfa
+
+
+    def _check_intersection_empty(self, dfa1: DeterministicFiniteAutomaton, dfa2: DeterministicFiniteAutomaton) -> bool:
+        intersection: EpsilonNFA = dfa1.get_intersection(dfa2)
+        return (intersection.is_empty())
+
+    def check_intersections(self):
+        result = {}
+        # проверяем пересечение const и var
+        r1 = self._check_intersection_empty(self.var_Automaton, self.const_Automat)
+        result["VarAndConst"] = r1
+        # проверяем попарные пересечения для скобок
+        br1 = self._check_intersection_empty(self.lbr1_Automat, self.rbr1_Automat)
+        result["lbr1Andlbr2"] = br1
+        br2 = self._check_intersection_empty(self.lbr2_Automat, self.rbr2_Automat)
+        result["lbr2Andlbr2"] = br2
+        br3 = self._check_intersection_empty(self.lbr3_Automat, self.rbr3_Automat)
+        result["lbr3Andlbr3"] = br3
+
+        # проверяем пересечения для кадого типа скобок с const и var
+        brackets = [self.lbr1_Automat, self.rbr1_Automat, self.lbr2_Automat, self.rbr2_Automat, self.lbr3_Automat, self.rbr3_Automat]
+        c = 0
+        for bracket in brackets:
+            br11 = self._check_intersection_empty(bracket, self.const_Automat)
+            br22 = self._check_intersection_empty(bracket, self.var_Automaton)
+            # if br11 and br22:
+            #print("Empty with var and const", br11 and br22)
+            type = f"type{c}"
+            c +=1
+            result[f"Var{type}"] = br11
+            result[f"Const{type}"] = br22
+
+        # проверяем конкатенацию любых двух автоматов для скобок
+        result["concatBrackets"] = True
+        for bracket1 in brackets:
+            for bracket2 in brackets:
+                if bracket1.is_equivalent_to(bracket2):
+                    continue
+                concat_brackets = self.__connectDFA1_to_DFA2(bracket1, bracket2)
+                for bracket3 in brackets:
+                    if bracket3.is_equivalent_to(bracket1) or bracket3.is_equivalent_to(bracket2):
+                        continue
+                    br111 = self._check_intersection_empty(bracket3, concat_brackets)
+                    if not br111:
+                        result["concatBrackets"] = False
+                        break
+
+        # проверяем есть ли False после проверок
+        check = False in set(result.values())
+        return not check, result
+
+
+
 
     # --------------------------------------
 
@@ -308,7 +382,7 @@ class AutomatGenerator:
         eol_nfa: EpsilonNFA = self.eol_Automat.kleene_star()
 
         eol = eol_nfa.to_deterministic()
-        eol_plus =  self.__connectDFA1_to_DFA2(self.eol_Automat, eol)
+        eol_plus = self.__connectDFA1_to_DFA2(self.eol_Automat, eol)
 
         # Создаем автомат для ([definition][eol]+)+
         definition_eol_dka = self.__connectDFA1_to_DFA2(definition_automaton, eol_plus)

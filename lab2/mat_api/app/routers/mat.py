@@ -3,7 +3,7 @@ from pyformlang.finite_automaton import DeterministicFiniteAutomaton
 from starlette.responses import FileResponse
 
 from ..mat.automaton import save_to_file, read_parametrs, convert_Automat_to_dict, dfa_to_dot_str, visualize_dfa
-from ..mat.generate import AutomatGenerator
+from ..mat.generateV2 import AutomatGenerator
 from ..utils import start_haskel_mat
 
 mat = APIRouter(
@@ -33,10 +33,6 @@ def check_string(test_string: str):
     result = process.stdout.readline().strip()
 
     process.terminate()
-
-    # if result == '1':
-    #  return {"Accepted": True}
-    # return {"Accepted": False}
     return {"result": result}
 
 
@@ -56,6 +52,25 @@ def check_equiv(eq_table: str):
 
 @mat.get("/dot_automat")
 def dot_automat(type: str):
+    automata = get_automat_by_type(type)
+    dot_str = dfa_to_dot_str(automata)
+    return {"type": type, "dot": dot_str}
+
+
+@mat.get("/file", response_class=FileResponse)
+def generate_dot():
+    path = "output/prog"
+    visualize_dfa(automat, path)
+    return "output/prog"
+@mat.get("/image", response_class=FileResponse)
+def generate_image1(type: str):
+    automata = get_automat_by_type(type)
+    path = "output/prog"
+    visualize_dfa(automata, path)
+    return "output/prog.pdf"
+
+
+def get_automat_by_type(type: str):
     if type == "eol":
         automata = automat_generator.eol_Automat
     elif type == "blank":
@@ -82,31 +97,4 @@ def dot_automat(type: str):
         automata = automat_generator.rbr3_Automat
     else:
         automata = automat
-
-    dot_str = dfa_to_dot_str(automata)
-    return {"type": type, "dot": dot_str}
-
-
-@mat.get("/file", response_class=FileResponse)
-def generate_dot():
-    path = "output/prog"
-    visualize_dfa(automat, path)
-    return "output/prog"
-
-@mat.get("/image", response_class=FileResponse)
-def generate_image():
-    path = "output/prog"
-    visualize_dfa(automat, path)
-    return "output/prog.pdf"
-
-@mat.get("/image1", response_class=FileResponse)
-def generate_image1(type: str):
-    if type == "eol":
-        automata = automat_generator.eol_Automat
-    elif type == "blank":
-        automata = automat_generator.blank_Automat
-    else:
-        automata = automat
-    path = "output/prog"
-    visualize_dfa(automata, path)
-    return "output/prog.pdf"
+    return automata

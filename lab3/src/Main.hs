@@ -1,10 +1,10 @@
+-- src/Main.hs
 module Main where
 
 import Grammar
+import RemoveLongRules
+import RemoveEpsilonRules
 
+-- Ваш код здесь
 main :: IO ()
-main = do
-    let grammarStr = "S -> AB\nA -> a\nB -> b"
-    case parseGrammar grammarStr of
-        Just grammar -> putStrLn (printGrammar grammar)
-        Nothing -> putStrLn "Failed to parse grammar"
+main = putStrLn "Fuzz Module"

@@ -1,5 +1,5 @@
 module Grammar (
-    Grammar(..), -- Export the `Grammar` constructor for use in test cases
+    Grammar(..),
     Rule,
     Symbol(..),
     parseGrammar,
@@ -15,7 +15,7 @@ import Control.Monad (guard)
 -- Тип данных для символов грамматики
 data Symbol = Terminal Char
             | NonTerminal String
-            | Epsilon -- Добавляем символ для пустых правил
+            | Epsilon
             deriving (Eq, Show)
 
 -- Тип данных для правил грамматики
@@ -23,14 +23,15 @@ type Rule = (Symbol, [Symbol])
 
 -- Тип данных для грамматики
 newtype Grammar = Grammar [Rule]
-    deriving (Eq, Show) -- Explicitly derive both `Eq` and `Show`
+    deriving (Eq, Show)
 
 -- Функция для парсинга строки в символ
 parseSymbol :: String -> Maybe Symbol
 parseSymbol s
+    | null s = Nothing -- Handle empty strings
+    | s == "ε" = Just Epsilon -- Handle epsilon
     | length s == 1 && isLower (head s) = Just (Terminal (head s)) -- Single lowercase char is a Terminal
     | all isAlphaNum s && isUpper (head s) = Just (NonTerminal s) -- Alphanumeric starting with uppercase is a NonTerminal
-    | s == "ε" = Just Epsilon -- Support for epsilon
     | otherwise = Nothing
 
 -- Функция для парсинга строки в правило
@@ -39,10 +40,14 @@ parseRule s = do
     let parts = words s -- Split the string into words
     case break (== "->") parts of
         (lhs, "->":rhs) -> do
-            leftSymbol <- parseNonTerminal (unwords lhs) -- Parse the left-hand side
+            -- Ensure the left-hand side (lhs) has exactly one valid non-terminal
+            guard (length lhs == 1)
+            leftSymbol <- parseNonTerminal (head lhs) -- Parse the single non-terminal
+            -- Ensure the right-hand side (rhs) is not empty and valid
+            guard (not (null rhs))
             rightSymbols <- mapM parseSymbol rhs -- Parse the right-hand side symbols
             return (leftSymbol, rightSymbols)
-        _ -> Nothing
+        _ -> Nothing -- Invalid format
 
 -- Helper function to parse a NonTerminal
 parseNonTerminal :: String -> Maybe Symbol

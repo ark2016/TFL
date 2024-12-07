@@ -1,6 +1,5 @@
 name:                lab3
 version:             0.1.0.0
--- other fields omitted for brevity
 cabal-version:       >=1.10
 build-type:          Simple
 
@@ -8,6 +7,7 @@ build-type:          Simple
 library
   hs-source-dirs:      src
   exposed-modules:     Grammar
+                     , RemoveLongRules
   build-depends:       base >=4.7 && <5
   default-language:    Haskell2010
 
@@ -21,22 +21,15 @@ test-suite lab3-test-suite
                      , lab3
   build-tool-depends:  hspec-discover:hspec-discover
   other-modules:       GrammarSpec
+                     , RemoveLongRulesSpec
   default-language:    Haskell2010
 
 -- Executable for Main.hs
 executable fuzzModule
-  -- Entry point for the executable
   main-is:             Main.hs
-
-  -- Source directory for Main.hs and other modules
   hs-source-dirs:      src
-
-  -- Dependencies for the executable
   build-depends:       base >=4.7 && <5
                      , lab3
-
-  -- Add the missing modules here
   other-modules:       Grammar
-
-  -- Set the default language
+                     , RemoveLongRules
   default-language:    Haskell2010

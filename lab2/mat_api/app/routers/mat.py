@@ -18,6 +18,21 @@ automat_generator = AutomatGenerator("lab2", maxSize=maxSize, maxNesting=maxNest
 @mat.get("/generate")
 def generate():
     global automat
+    global automat_generator
+
+    if not automat_generator.check:
+        k = 0
+        # пытаемся перегенерировать
+        while (k<3):
+            new_automat_generator = AutomatGenerator("lab2", maxSize=maxSize, maxNesting=maxNesting)
+            k+=1
+            if new_automat_generator.check:
+                automat_generator = new_automat_generator
+                break
+
+    if not automat_generator.check:
+        return {"automat": "Fail automat generation!"}
+
     automat = automat_generator.gen_random_program_Automat()
     automat_dict = convert_Automat_to_dict(automat)
     save_to_file("app/output/automaton.txt", automat_dict)

@@ -16,7 +16,7 @@ import Control.Monad (guard)
 data Symbol = Terminal Char
             | NonTerminal String
             | Epsilon
-            deriving (Eq, Show)
+            deriving (Eq, Show, Ord)
 
 -- Тип данных для правил грамматики
 type Rule = (Symbol, [Symbol])

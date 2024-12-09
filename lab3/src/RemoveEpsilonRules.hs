@@ -1,52 +1,55 @@
--- src/RemoveEpsilonRules.hs
 module RemoveEpsilonRules (
     removeEpsilonRules
 ) where
 
 import Grammar (Grammar(..), Rule, Symbol(..))
 import qualified Data.Set as Set
+import Data.List (nub)
 
--- | Удаляет ε-правила из грамматики, преобразуя её в эквивалентную грамматику без ε-правил
+-- | Удаляет ε-правила из грамматики в соответствии со стандартным алгоритмом
 removeEpsilonRules :: Grammar -> Grammar
 removeEpsilonRules (Grammar rules) =
     let
-        -- Шаг 1: Находим nullable нетерминалы
-        nullable = findNullable rules
+        originalRules = rules
+        nullable = findNullable originalRules
+        expandedRules = concatMap (generateNewRules nullable) originalRules
 
-        -- Шаг 2: Генерируем новые правила, исключая nullable символы
-        -- Здесь мы всегда включаем исходные правила, чтобы сохранить их в итоговой грамматике
-        newRules = concatMap (generateNewRules nullable) rules
-
-        -- Шаг 3: Определяем стартовый символ
-        startSymbol = case rules of
+        startSymbol = case originalRules of
                         ((NonTerminal s, _):_) -> s
                         _ -> error "Empty grammar"
 
         startNullable = Set.member startSymbol nullable
 
-        -- Шаг 4: Проверяем, является ли грамматика только S -> Epsilon
-        isOnlyStartEpsilon = length rules == 1 && (head rules) == (NonTerminal startSymbol, [Epsilon])
+        -- Фильтрация: удаляем все правила с Epsilon, кроме S → ε если S был помечен как nullable
+        noEpsRules = filter (keepRule startNullable startSymbol) expandedRules
 
-        -- Шаг 5: Если стартовый символ nullable и это не единственное правило (не только S->ε), добавляем S' -> S | Epsilon
-        newStartRules = if startNullable && not isOnlyStartEpsilon
-                        then [ (NonTerminal (startSymbol ++ "'"), [NonTerminal startSymbol])
-                             , (NonTerminal (startSymbol ++ "'"), [Epsilon]) ]
-                        else []
+        -- Добавляем S → ε только если S было nullable и S → ε ещё не существует
+        hasS_Epsilon = any (\(lhs, rhs) -> lhs == NonTerminal startSymbol && rhs == [Epsilon]) originalRules
+        finalRules =
+            if startNullable && not hasS_Epsilon
+            then (NonTerminal startSymbol, [Epsilon]) : noEpsRules
+            else noEpsRules
 
-        -- Шаг 6: Не удаляем чистые ε-правила, так как тесты требуют их сохранить.
-        -- Поэтому просто объединяем конечные правила с добавленными стартовыми правилами.
-        finalRules = newRules ++ newStartRules
+        -- Удаляем дублирующиеся правила
+        dedupedRules = nub finalRules
+    in Grammar dedupedRules
 
-    in Grammar finalRules
+-- | Оставляем правило, если:
+-- 1. В нём нет Epsilon вообще, или
+-- 2. Это правило S→ε (если S был помечен как nullable)
+keepRule :: Bool -> String -> Rule -> Bool
+keepRule startNullable startSymbol (lhs, rhs) =
+    let hasEps = Epsilon `elem` rhs
+        isStartSymbolEps = (lhs == NonTerminal startSymbol) && (rhs == [Epsilon]) && startNullable
+    in (not hasEps) || isStartSymbolEps
 
--- | Находит все nullable нетерминалы в грамматике
+-- | Находит все ε-порождающие нетерминалы в грамматике
 findNullable :: [Rule] -> Set.Set String
 findNullable rules = go initialNullable
   where
-    -- Начальное множество: нетерминалы, которые непосредственно могут выводить ε
+    -- Начальное множество: нетерминалы с правилами A→ε
     initialNullable = Set.fromList [ s | (NonTerminal s, [Epsilon]) <- rules ]
 
-    -- Рекурсивно добавляем нетерминалы, которые могут выводить ε через другие правила
     go nullable =
         let newNullable = Set.union nullable (Set.fromList
                               [ s
@@ -58,45 +61,35 @@ findNullable rules = go initialNullable
            then nullable
            else go newNullable
 
--- Проверка, является ли символ nullable
+-- | Проверка, является ли символ nullable
 isNullable :: Set.Set String -> Symbol -> Bool
 isNullable nullable (NonTerminal s) = Set.member s nullable
-isNullable nullable Epsilon         = True
+isNullable _        Epsilon         = True
 isNullable _        _               = False
 
--- | Генерирует новые правила, исключая nullable символы
--- Всегда добавляем исходное правило (includeOriginal = True),
--- чтобы сохранить все варианты, включая эпсилонные.
+-- | Генерирует новые правила, исключая nullable символы.
+-- По алгоритму мы должны взять каждое правило A→α0B1α1…Bkαk,
+-- где Bj nullable, и добавить все варианты, где каждый Bj либо присутствует, либо удалён.
 generateNewRules :: Set.Set String -> Rule -> [Rule]
 generateNewRules nullable (left, rhs) =
     let
-        -- Находим все позиции nullable символов (включая Epsilon)
+        -- Находим nullable символы в правой части
         nullableIndices = [ i | (i, sym) <- zip [0..] rhs, isNullable nullable sym ]
-
-        -- Генерируем все непустые подмножества nullableIndices,
-        -- т.е. все варианты удаления nullable символов
-        subsets = [ subset | subset <- powerset nullableIndices, not (null subset) ]
-
-        -- Генерируем новые правые части, исключая выбранные nullable символы
+        -- Генерируем все подмножества nullable индексов (включая пустое для оригинального правила)
+        subsets = powerset nullableIndices
+        -- Для каждого подмножества удаляем соответствующие символы
         newRhsList = [ removeIndices rhs subset | subset <- subsets ]
+        -- Исключаем правила с пустой правой частью (A → ε будет удалено позже)
+        finalRules = [ (left, newRhs) | newRhs <- newRhsList, not (null newRhs) ]
+    in finalRules
 
-        -- Всегда включаем исходное правило
-        originalRules = [(left, rhs)]
-
-        -- Исключаем пустые правые части
-        generatedRules = [ (left, newRhs) | newRhs <- newRhsList, newRhs /= [] ]
-
-    in originalRules ++ generatedRules
-
--- | Проверяет, содержит ли правило Epsilon в правой части
-hasEpsilon :: Rule -> Bool
-hasEpsilon (_, rhs) = Epsilon `elem` rhs
-
--- | Удаляет элементы из списка по указанным индексам
+-- | Удаляет элементы из списка по индексам
 removeIndices :: [a] -> [Int] -> [a]
 removeIndices xs indices = [ x | (x, i) <- zip xs [0..], not (i `elem` indices) ]
 
 -- | Генерирует все подмножества списка
 powerset :: [a] -> [[a]]
 powerset []     = [[]]
-powerset (x:xs) = let ps = powerset xs in ps ++ map (x:) ps
+powerset (x:xs) =
+    let ps = powerset xs
+    in ps ++ map (x:) ps

@@ -8,7 +8,7 @@ cabal build
 ```bash
 cabal test
 ```
-для запуска испольняемого файла
+для запуска испольняемого файла (если в `lab3.cabal` поменять `Server.hs` на `Main.hs`)
 ```bash
 cabal run 
 ```

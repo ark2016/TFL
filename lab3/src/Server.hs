@@ -1,88 +1,114 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
+
 
 module Main where
 
 import Grammar
 import CYKParser
+import ChomskyNormalForm (toChomskyNormalForm)
+
 import Network.Wai
 import Network.Wai.Handler.Warp (run)
 import Network.HTTP.Types (status200, status400)
-import Data.Aeson (encode, decode, object, (.=), FromJSON, ToJSON)
+import Data.Aeson (encode, decode, object, (.=), FromJSON, ToJSON)  -- Импортируем классы
 import GHC.Generics (Generic)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Encoding as LT
 import Data.ByteString.Lazy (ByteString)
 import Control.Monad (forM)
+import System.Random (randomRIO)
 
--- | Входные данные для генерации тестов
+data RuleJSON = RuleJSON
+  { lhs :: String
+  , rhs :: [String]
+  } deriving (Show, Generic, FromJSON)
+
+data CustomGrammarRequest = CustomGrammarRequest
+  { grammarRules :: [RuleJSON]
+  } deriving (Show, Generic, FromJSON)
+
 data TestRequest = TestRequest
-  { grammarIndex :: Int  -- ^ Индекс грамматики
-  , numTests     :: Int  -- ^ Количество тестов
-  } deriving (Show, Generic)
+  { grammarIndex  :: Maybe Int
+  , numTests      :: Int
+  , customGrammar :: Maybe CustomGrammarRequest
+  } deriving (Show, Generic, FromJSON)
 
--- | Результат теста
+-- Просто добавляем deriving (ToJSON)
 data TestCase = TestCase
-  { input    :: T.Text  -- ^ Строка для тестирования
-  , expected :: Bool    -- ^ Ожидаемый результат
-  , actual   :: Bool    -- ^ Фактический результат
-  , status   :: T.Text  -- ^ PASS или FAIL
-  } deriving (Show, Generic)
+  { is_in_lang :: Bool
+  , input      :: T.Text
+  } deriving (Show, Generic, ToJSON)
 
--- | Ответ сервера
 data TestResponse = TestResponse
-  { totalTests :: Int         -- ^ Общее количество тестов
-  , passed     :: Int         -- ^ Успешные тесты
-  , failed     :: Int         -- ^ Проваленные тесты
-  , cases      :: [TestCase]  -- ^ Список тестов
-  } deriving (Show, Generic)
+  { cases      :: [TestCase]
+  , positive   :: Int
+  , negative   :: Int
+  , totalTests :: Int
+  } deriving (Show, Generic, ToJSON)
 
--- JSON-инстансы
-instance FromJSON TestRequest
-instance ToJSON TestCase
-instance ToJSON TestResponse
-
--- | Пример списка грамматик
 grammars :: [Grammar]
 grammars =
-  [ Grammar [(NonTerminal "S", [Terminal 'a'])]
-  , Grammar [(NonTerminal "S", [NonTerminal "A", Terminal 'b'])]
+  [ Grammar [(NonTerminal "S", [Terminal 'a'])],
+    Grammar [(NonTerminal "S", [Terminal 'a', NonTerminal "S", Terminal 'b']),
+             (NonTerminal "S", [Epsilon])]
   ]
 
--- | Генерация результатов тестов
 generateTests :: Grammar -> Int -> IO [TestCase]
 generateTests grammar n = do
-  let testStrings = map (\i -> replicate i 'a') [1..n]  -- Примеры: "a", "aa", "aaa"
-  return $ flip map testStrings $ \s ->
+  let testStrings = ["a", "aa", "aaa", "aab", "abb", "ab", "b", ""]
+  let selectedStrings = take n (cycle testStrings)
+  testCases <- forM selectedStrings $ \s -> do
     let isValid = cykParse grammar s
-    in TestCase (T.pack s) True isValid (if isValid then "PASS" else "FAIL")
+    return TestCase { is_in_lang = isValid, input = T.pack s }
+  return testCases
 
--- | Основное приложение
+parseCustomGrammar :: CustomGrammarRequest -> Grammar
+parseCustomGrammar (CustomGrammarRequest rules) =
+  Grammar $ map toRule rules
+  where
+    toRule (RuleJSON l r) =
+      (NonTerminal l, map parseSymbol r)
+
+    parseSymbol "ε" = Epsilon
+    parseSymbol s
+      | length s == 1 && s >= "a" && s <= "z" = Terminal (head s)
+      | otherwise = NonTerminal s
+
 app :: Application
 app req respond = do
   body <- strictRequestBody req
   case decode body :: Maybe TestRequest of
-    Just (TestRequest gIdx n) ->
-      if gIdx <= 0 || gIdx > length grammars
-        then respond $ responseLBS status400 [("Content-Type", "application/json")]
-                        $ encode $ object ["error" .= ("Invalid grammar index" :: T.Text)]
-        else do
-          let grammar = grammars !! (gIdx - 1)
-          testCases <- generateTests grammar n
-          let passedTests = length $ filter (\tc -> status tc == "PASS") testCases
+    Just (TestRequest mgIdx n mCustom) -> do
+      grammar <- case mgIdx of
+        Just gIdx ->
+          if gIdx <= 0 || gIdx > length grammars
+            then return Nothing
+            else return (Just (grammars !! (gIdx - 1)))
+        Nothing -> case mCustom of
+          Just custReq -> return (Just (parseCustomGrammar custReq))
+          Nothing -> return Nothing
+
+      case grammar of
+        Nothing -> respond $ responseLBS status400 [("Content-Type", "application/json")]
+                        $ encode $ object ["error" .= ("Invalid grammar" :: T.Text)]
+        Just g -> do
+          let cnfGrammar = toChomskyNormalForm g
+          testCases <- generateTests cnfGrammar n
+          let passedTests = length $ filter is_in_lang testCases
           let failedTests = length testCases - passedTests
           respond $ responseLBS status200 [("Content-Type", "application/json")]
             $ encode TestResponse
-                { totalTests = length testCases
-                , passed = passedTests
-                , failed = failedTests
-                , cases = testCases
+                { cases = testCases
+                , positive = passedTests
+                , negative = failedTests
+                , totalTests = length testCases
                 }
     Nothing -> respond $ responseLBS status400 [("Content-Type", "application/json")]
                  $ encode $ object ["error" .= ("Invalid request" :: T.Text)]
 
--- | Запуск сервера
 main :: IO ()
 main = do
   putStrLn "Server running on http://localhost:8080"

@@ -20,6 +20,7 @@ library
   build-depends:       base >=4.7 && <5
                      , containers >=0.6 && <0.8
                      , random >=1.2 && <1.3
+                     , random-shuffle >=0.0.4 && <0.1
   default-language:    Haskell2010
 
 -- Test suite section
@@ -32,6 +33,7 @@ test-suite lab3-test-suite
                      , lab3
                      , containers >=0.6 && <0.8
                      , random >=1.2 && <1.3
+                     , random-shuffle >=0.0.4 && <0.1
   build-tool-depends:  hspec-discover:hspec-discover
   other-modules:       GrammarSpec
                      , RemoveLongRulesSpec
@@ -42,7 +44,6 @@ test-suite lab3-test-suite
                      , FirstFollowSpec
                      , LastPrecedeSpec
                      , BigramMatrixSpec
-                     , TestGeneratorSpec
                      , CYKParserSpec
   default-language:    Haskell2010
 

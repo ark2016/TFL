@@ -15,8 +15,11 @@ library
                      , FirstFollow
                      , LastPrecede
                      , BigramMatrix
+                     , TestGenerator
+                     , CYKParser
   build-depends:       base >=4.7 && <5
                      , containers >=0.6 && <0.8
+                     , random >=1.2 && <1.3
   default-language:    Haskell2010
 
 -- Test suite section
@@ -28,7 +31,7 @@ test-suite lab3-test-suite
                      , hspec >= 2.7.0
                      , lab3
                      , containers >=0.6 && <0.8
-
+                     , random >=1.2 && <1.3
   build-tool-depends:  hspec-discover:hspec-discover
   other-modules:       GrammarSpec
                      , RemoveLongRulesSpec
@@ -39,6 +42,8 @@ test-suite lab3-test-suite
                      , FirstFollowSpec
                      , LastPrecedeSpec
                      , BigramMatrixSpec
+                     , TestGeneratorSpec
+                     , CYKParserSpec
   default-language:    Haskell2010
 
 -- Executable for Main.hs
@@ -48,7 +53,7 @@ executable fuzzModule
   build-depends:       base >=4.7 && <5
                      , lab3
                      , containers >=0.6 && <0.8
-
+                     , random >=1.2 && <1.3
   other-modules:       Grammar
                       , RemoveLongRules
                       , RemoveEpsilonRules
@@ -58,4 +63,6 @@ executable fuzzModule
                       , FirstFollow
                       , LastPrecede
                       , BigramMatrix
+                      , TestGenerator
+                      , CYKParser
   default-language:    Haskell2010

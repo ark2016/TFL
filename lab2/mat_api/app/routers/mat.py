@@ -3,7 +3,7 @@ from pyformlang.finite_automaton import DeterministicFiniteAutomaton
 from starlette.responses import FileResponse
 
 from ..mat.automaton import save_to_file, read_parametrs, convert_Automat_to_dict, dfa_to_dot_str, visualize_dfa
-from ..mat.generateV2 import AutomatGenerator
+from ..mat.generate import AutomatGenerator
 from ..utils import start_haskel_mat
 
 mat = APIRouter(

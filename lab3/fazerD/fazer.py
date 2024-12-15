@@ -1,7 +1,7 @@
-from lab3.fazerD.CNF import CFG_to_CNF
-from lab3.fazerD.CYK import cyk_algorithm
-from lab3.fazerD.bigrams import generate_tests_from_matrix
-from lab3.fazerD.parse_grammar import recognize_grammar
+from CNF import CFG_to_CNF
+from CYK import cyk_algorithm
+from bigrams import generate_tests_from_matrix
+from parse_grammar import recognize_grammar
 
 
 def marking_tests(grammar, start_symbol, tests):

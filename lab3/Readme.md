@@ -4,43 +4,40 @@ cabal clean
 ```bash
 cabal build
 ```
+
+---
+
 для тестов
 ```bash
 cabal test
 ```
+
+---
+
 для запуска испольняемого файла 
 ```bash
 cabal run fuzzModule
 ```
+
+---
+
 для запуска сервера
 ```bash
- cabal run lab3-server
+cabal run lab3-server
 ```
-для запроса на сервер с записью в файл `res.json`\
-для выбора тестовой грамматики
+для запроса на сервер с записью в файл `res.json`
+
 ```cmd
-curl -X POST http://localhost:8080 -H "Content-Type: application/json" -d "{\"grammarIndex\":1,\"numTests\":3}" > res.json
-```
-для ввода кастомной грамматики
-```cmd
-curl -X POST http://localhost:8080 -H "Content-Type: application/json" -d "{\"grammarIndex\":null,\"numTests\":5,\"customGrammar\":{\"grammarRules\":[{\"lhs\":\"S\",\"rhs\":[\"a\",\"S\",\"b\"]},{\"lhs\":\"S\",\"rhs\":[\"ε\"]}]}}" > res_custom.json
+curl.exe -X POST -H "Content-Type: application/json" -d '{\"grammarInput\": \"S -> a S\nS -> b\",\"maxDepth\": 4,\"numNegatives\": 3}' http://localhost:8080 > res.json
 ```
 
 ```json
 {
-  "grammarIndex": null,
-  "numTests": 5,
-  "customGrammar": {
-    "grammarRules": [
-      {
-        "lhs": "S",
-        "rhs": ["a", "S", "b"]
-      },
-      {
-        "lhs": "S",
-        "rhs": ["ε"]
-      }
-    ]
-  }
+  "grammarInput": "S -> a S\nS -> b",
+  "maxDepth": 4,
+  "numNegatives": 3
 }
+```
+```cmd
+curl.exe -X POST -H "Content-Type: application/json" -d '{\"grammarInput\": \"S -> A B\nA -> a\n A-> A A\nB -> b \n B-> B B\", \"maxDepth\": 6, \"numNegatives\": 5}' http://localhost:8080 > res.json
 ```

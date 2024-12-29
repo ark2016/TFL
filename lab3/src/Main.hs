@@ -2,7 +2,7 @@ module Main (
     main
 ) where
 
-import Grammar (Grammar, parseGrammar)
+import Grammar (Grammar, parseGrammar, printGrammar)
 import ChomskyNormalForm (toChomskyNormalForm)
 import TestGenerator (generateTestCases)
 import System.IO (hFlush, stdout)
@@ -46,3 +46,5 @@ main = do
     printTestCase (str, label) = do
         putStrLn $ str ++ " " ++ show (if label then 1 else 0)
         hFlush stdout
+--"S -> A B\nA -> a\nA -> A A\nB -> b\nB -> B B"
+--printGrammar $ toChomskyNormalForm $ case parseGrammar input of Just grammar -> toChomskyNormalForm grammar

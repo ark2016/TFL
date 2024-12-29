@@ -17,6 +17,7 @@ library
                      , BigramMatrix
                      , TestGenerator
                      , CYKParser
+                     , RemoveLeftRecursion
   build-depends:       base >=4.7 && <5
                      , containers >=0.6 && <0.8
                      , random >=1.2 && <1.3
@@ -45,6 +46,7 @@ test-suite lab3-test-suite
                      , LastPrecedeSpec
                      , BigramMatrixSpec
                      , CYKParserSpec
+                     , RemoveLeftRecursionSpec
   default-language:    Haskell2010
 
 -- Executable for Main.hs
@@ -70,6 +72,7 @@ executable fuzzModule
                      , BigramMatrix
                      , TestGenerator
                      , CYKParser
+                     , RemoveLeftRecursion
   default-language:    Haskell2010
 
 -- Executable for Server.hs
@@ -98,4 +101,5 @@ executable lab3-server
                      , BigramMatrix
                      , TestGenerator
                      , CYKParser
+                     , RemoveLeftRecursion
   default-language:    Haskell2010

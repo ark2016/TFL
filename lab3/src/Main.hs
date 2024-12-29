@@ -6,6 +6,11 @@ import Grammar (Grammar, parseGrammar, printGrammar)
 import ChomskyNormalForm (toChomskyNormalForm)
 import TestGenerator (generateTestCases)
 import System.IO (hFlush, stdout)
+import RemoveLeftRecursion (removeLeftRecursion)
+import RemoveLongRules (removeLongRules)
+import RemoveEpsilonRules (removeEpsilonRules)
+import RemoveChainRules (removeChainRules)
+import RemoveUselessSymbols (removeUselessSymbols)
 
 -- | Функция `main` запускает программу, принимая входную грамматику, максимальную длину строки и количество отрицательных тестов.
 main :: IO ()

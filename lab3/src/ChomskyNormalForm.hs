@@ -9,7 +9,7 @@ import qualified Data.Map.Strict as Map
 import Data.List (nub)
 import Data.Maybe (fromMaybe)
 
--- Предполагается, что данные модули уже реализованы
+import RemoveLeftRecursion (removeLeftRecursion)
 import RemoveLongRules (removeLongRules)
 import RemoveEpsilonRules (removeEpsilonRules)
 import RemoveChainRules (removeChainRules)
@@ -17,23 +17,25 @@ import RemoveUselessSymbols (removeUselessSymbols)
 
 -- | Приводит заданную грамматику к нормальной форме Хомского.
 -- Шаги:
--- 1) Удаление длинных правил
--- 2) Удаление ε-правил
--- 3) Удаление цепных правил
--- 4) Удаление бесполезных символов
--- 5) Замена терминалов в двусимвольных правилах на нетерминалы
+-- 1) Удаление левой рекурсии
+-- 2) Удаление длинных правил
+-- 3) Удаление ε-правил
+-- 4) Удаление цепных правил
+-- 5) Удаление бесполезных символов
+-- 6) Замена терминалов в двусимвольных правилах на нетерминалы
 toChomskyNormalForm :: Grammar -> Grammar
 toChomskyNormalForm grammar =
     let
-        g1 = removeLongRules grammar
-        g2 = removeEpsilonRules g1
-        g3 = removeChainRules g2
-        g4 = removeUselessSymbols g3
-        g5 = introduceTerminalNonTerminals g4
+        --g0 = removeLeftRecursion grammar      -- Шаг 1: Удаление левой рекурсии
+        g1 = removeLongRules grammar --g0              -- Шаг 2: Удаление длинных правил
+        g2 = removeEpsilonRules g1            -- Шаг 3: Удаление ε-правил
+        g3 = removeChainRules g2               -- Шаг 4: Удаление цепных правил
+--        g4 = removeUselessSymbols g3           -- Шаг 5: Удаление бесполезных символов
+        g5 = introduceTerminalNonTerminals g3   -- Шаг 6: Замена терминалов в двусимвольных правилах
     in g5
 
 -- | Функция introduceTerminalNonTerminals:
--- На пятом шаге для каждого правила вида A -> u1 u2, где u_i может быть терминалом,
+-- На шестом шаге для каждого правила вида A -> u1 u2, где u_i может быть терминалом,
 -- нам необходимо заменить терминалы на нетерминалы, выводящие этот терминал.
 -- Например, если есть правило A -> B a, то заменим его на A -> B X_a,
 -- где X_a → a добавляется в грамматику.

@@ -59,6 +59,10 @@ randomWalk bigrams starts ends maxDepth = do
               walk (current ++ [nxt])
 
     toStr syms = [ c | Terminal c <- syms ]
+
+    -- Полиморфная функция для выбора случайного элемента
+    randomChoice :: [a] -> IO a
+    randomChoice [] = fail "randomChoice: empty list"
     randomChoice xs = do
       idx <- randomRIO (0, length xs - 1)
       return (xs !! idx)
@@ -101,6 +105,8 @@ generateRandomStrings alphabet maxLength num = do
 generateStringOfLength :: [Char] -> Int -> IO String
 generateStringOfLength alphabet len = replicateM len (randomChoice alphabet)
   where
+    randomChoice :: [a] -> IO a
+    randomChoice [] = fail "randomChoice: empty alphabet"
     randomChoice xs = do
       idx <- randomRIO (0, length xs - 1)
       return (xs !! idx)

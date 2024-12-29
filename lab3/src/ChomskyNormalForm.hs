@@ -26,8 +26,8 @@ import RemoveUselessSymbols (removeUselessSymbols)
 toChomskyNormalForm :: Grammar -> Grammar
 toChomskyNormalForm grammar =
     let
-        --g0 = removeLeftRecursion grammar      -- Шаг 1: Удаление левой рекурсии
-        g1 = removeLongRules grammar --g0              -- Шаг 2: Удаление длинных правил
+        g0 = removeLeftRecursion grammar      -- Шаг 1: Удаление левой рекурсии
+        g1 = removeLongRules g0--grammar --g0              -- Шаг 2: Удаление длинных правил
         g2 = removeEpsilonRules g1            -- Шаг 3: Удаление ε-правил
         g3 = removeChainRules g2               -- Шаг 4: Удаление цепных правил
 --        g4 = removeUselessSymbols g3           -- Шаг 5: Удаление бесполезных символов

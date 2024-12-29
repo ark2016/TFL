@@ -19,6 +19,11 @@ cabal test
 cabal run fuzzModule
 ```
 
+```cmd
+S-> S b b S
+S->   a
+```
+
 ---
 
 для запуска сервера

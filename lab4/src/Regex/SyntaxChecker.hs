@@ -4,13 +4,12 @@ module Regex.SyntaxChecker
   , RegexError(..) -- Export the RegexError type and its constructors
 ) where
 
-
-
-import Control.Monad
 import Regex.AST
+import Data.Set (Set)
+import qualified Data.Set as Set
 
 --------------------------------------------------------------------------------
--- Промежуточное дерево, где группы уже пронумерованы корректно
+-- | Промежуточное дерево, где группы уже пронумерованы корректно
 data CheckedRegex
   = CRConcat [CheckedRegex]
   | CRAlt CheckedRegex CheckedRegex
@@ -23,153 +22,154 @@ data CheckedRegex
   deriving (Eq, Show)
 
 --------------------------------------------------------------------------------
--- Возможные ошибки
+-- | Возможные ошибки
 data RegexError
   = TooManyGroups               -- Слишком много групп захвата (> 9)
   | NestedLookAhead             -- Вложенный look-ahead
-  | InvalidGroupRef Int         -- Ссылка на неинициализированную/невалидную группу
-  | FutureGroupRef Int          -- Ссылка на группу, объявленную "позже"
+  | InvalidGroupRef Int         -- Ссылка на группу, которой нет в тексте
   deriving (Eq, Show)
 
 --------------------------------------------------------------------------------
--- Тип состояния проверяющего модуля
-type GroupCount = Int
-type Declared   = [Int]  -- Список номеров уже объявленных групп
-
-type CheckerState = (GroupCount, Declared)
-
--- Монадический стек для проверки
-newtype RegexErrorState a = RegexErrorState
-  { runCheck :: CheckerState -> Either RegexError (a, CheckerState) }
-
-instance Functor RegexErrorState where
-  fmap f ma = RegexErrorState $ \st ->
-    case runCheck ma st of
-      Left err          -> Left err
-      Right (val, st')  -> Right (f val, st')
-
-instance Applicative RegexErrorState where
-  pure x = RegexErrorState $ \st -> Right (x, st)
-  mf <*> ma = RegexErrorState $ \st ->
-    case runCheck mf st of
-      Left err         -> Left err
-      Right (f, st')   ->
-        case runCheck ma st' of
-          Left err2          -> Left err2
-          Right (val, st'')  -> Right (f val, st'')
-
-instance Monad RegexErrorState where
-  return = pure
-  ma >>= f = RegexErrorState $ \st ->
-    case runCheck ma st of
-      Left err        -> Left err
-      Right (val,st') -> runCheck (f val) st'
-
--- Функции для работы с состоянием и ошибками
-throwError :: RegexError -> RegexErrorState a
-throwError e = RegexErrorState $ \_ -> Left e
-
-getState :: RegexErrorState CheckerState
-getState = RegexErrorState $ \st -> Right (st, st)
-
-putState :: CheckerState -> RegexErrorState ()
-putState st = RegexErrorState $ \_ -> Right ((), st)
-
---------------------------------------------------------------------------------
--- Монадические «примитивы» для удобства
-
--- Регистрируем новую группу (инкремент счётчика)
-newGroup :: RegexErrorState Int
-newGroup = do
-  (n, declared) <- getState
-  let n' = n + 1
-  putState (n', declared ++ [n'])
-  return n'
-
--- Проверяем ссылку на группу
-checkRef :: Int -> RegexErrorState ()
-checkRef num = do
-  (_n, declared) <- getState
-  if num `elem` declared
-    then return ()
-    else throwError (InvalidGroupRef num)
-
--- Проверяем «будущую» ссылку
-checkFutureRef :: Int -> RegexErrorState ()
-checkFutureRef num = do
-  (cnt, _decls) <- getState
-  if num <= cnt
-    then return ()
-    else throwError (FutureGroupRef num)
-
---------------------------------------------------------------------------------
--- Основная функция проверки (возвращает либо ошибку, либо «причесанный» AST)
-
+-- | Основная функция проверки.
+--
+-- 1. Сбор всех групп (в порядке появления), присвоение им номеров 1..k.
+-- 2. Сбор всех ссылок (?n). Проверка, что n ≤ k.
+-- 3. Построение CheckedRegex (замена RGroup 0 на CRGroup i и т.д.).
+--
 checkRegex :: Regex -> Either RegexError CheckedRegex
 checkRegex ast = do
-  let initialState = (0, []) -- (текущее число групп, номера уже объявленных групп)
-  result <- runCheck (check ast) initialState
-  let (ast', (finalCount, _decls)) = result
-  -- Проверяем, что количество групп не превышает 9
-  if finalCount > 9
+  -- 1. Собираем группы (в порядке появления) + ссылки
+  let (groupsList, refsSet) = collectGroupsAndRefs ast []
+      groupCount = length groupsList
+
+  -- 2. Проверяем число групп
+  if groupCount > 9
     then Left TooManyGroups
-    else Right ast'
+    else Right ()
+
+  -- 3. Проверяем все ссылки
+  --    Ссылка (RRef n) корректна, если 1 <= n <= groupCount
+  let invalidRefs = Set.filter (\r -> r < 1 || r > groupCount) refsSet
+  if not (Set.null invalidRefs)
+    then Left (InvalidGroupRef (Set.findMin invalidRefs))
+    else Right ()
+
+  -- 4. Строим CheckedRegex
+  buildChecked ast groupsList
 
 --------------------------------------------------------------------------------
--- Функция обхода AST с проверкой
+-- | collectGroupsAndRefs
+--   Обход дерева слева направо:
+--   - Когда видим RGroup 0, добавляем его в конец списка groupsList
+--   - Когда видим RRef n, добавляем n во множество refsSet
+--
+-- Возвращаем ( [порядок групп], {все ссылки} ).
+--
+collectGroupsAndRefs :: Regex
+                     -> [Regex]       -- уже найденные группы (в порядке)
+                     -> ([Regex], Set Int)
+collectGroupsAndRefs (RConcat rs) acc =
+  -- св развёртке foldl, аккуратно обходим каждый r
+  foldl
+    (\(grps, refs) r ->
+       let (g2, r2) = collectGroupsAndRefs r grps
+       in (g2, refs `Set.union` r2))
+    (acc, Set.empty)
+    rs
 
-check :: Regex -> RegexErrorState CheckedRegex
-check (RChar c) =
-  return (CRChar c)
+collectGroupsAndRefs (RAlt r1 r2) acc =
+  let (g1, s1) = collectGroupsAndRefs r1 acc
+      (g2, s2) = collectGroupsAndRefs r2 g1
+  in (g2, s1 `Set.union` s2)
 
-check (RConcat rs) = do
-  rs' <- mapM check rs
-  return $ CRConcat rs'
+collectGroupsAndRefs (RStar r) acc =
+  collectGroupsAndRefs r acc
 
-check (RAlt r1 r2) = do
-  r1' <- check r1
-  r2' <- check r2
-  return $ CRAlt r1' r2'
+collectGroupsAndRefs (RGroup 0 r) acc =
+  -- добавляем эту группу (RGroup 0 r) в конец списка
+  let acc' = acc ++ [RGroup 0 r]
+      (g1, s1) = collectGroupsAndRefs r acc'
+  in (g1, s1)
 
-check (RStar r) = do
-  r' <- check r
-  return (CRStar r')
+collectGroupsAndRefs (RRef n) acc =
+  (acc, Set.singleton n)
 
-check (RGroup _innerId r) = do
-  -- При встрече захватывающей группы регистрируем новую
-  newId <- newGroup
-  r' <- check r
-  return (CRGroup newId r')
+collectGroupsAndRefs (RLookAhead r) acc =
+  let (g1, s1) = collectGroupsAndRefs r acc
+  in (g1, s1)
 
-check (RRef num) = do
-  -- Проверяем, что ссылка допустима
-  checkRef num
-  checkFutureRef num
-  return (CRRef num)
+collectGroupsAndRefs (RNonCapGroup r) acc =
+  collectGroupsAndRefs r acc
 
-check (RNonCapGroup r) = do
-  r' <- check r
-  return (CRNonCapGroup r')
+collectGroupsAndRefs (RChar _) acc =
+  (acc, Set.empty)
 
-check (RLookAhead r) = do
-  -- Запрещаем вложенные look-ahead и захватывающие группы внутри look-ahead
-  disableInnerLookAhead r
-  r' <- check r
-  return (CRLookAhead r')
+--------------------------------------------------------------------------------
+-- | buildChecked
+--   Второй проход: заменяем группы (RGroup 0) на CRGroup i, где i — индекс
+--   этой группы в списке groupsList, а также проверяем вложенные look-ahead’ы.
+--
+buildChecked :: Regex -> [Regex] -> Either RegexError CheckedRegex
+buildChecked ast groupsList = go ast
+  where
+    -- найдем индекс данной группы (RGroup 0 r) в списке groupsList
+    groupIndex :: Regex -> Int
+    groupIndex g =
+      case lookup g (zip groupsList [1..]) of
+        Just i  -> i
+        Nothing -> error "Impossible: group not found"
 
--- Рекурсивная функция, которая проверяет отсутствие вложенных look-ahead’ов и групп
-disableInnerLookAhead :: Regex -> RegexErrorState ()
-disableInnerLookAhead (RLookAhead _) =
-  throwError NestedLookAhead
+    go (RConcat rs) = do
+      rs' <- mapM go rs
+      return (CRConcat rs')
 
-disableInnerLookAhead (RGroup _ _) =
-  throwError NestedLookAhead
+    go (RAlt r1 r2) = do
+      r1' <- go r1
+      r2' <- go r2
+      return (CRAlt r1' r2')
 
-disableInnerLookAhead (RChar _) = return ()
-disableInnerLookAhead (RRef _) = return ()
-disableInnerLookAhead (RStar r) = disableInnerLookAhead r
-disableInnerLookAhead (RAlt r1 r2) = do
-  disableInnerLookAhead r1
-  disableInnerLookAhead r2
-disableInnerLookAhead (RConcat rs) = mapM_ disableInnerLookAhead rs
-disableInnerLookAhead (RNonCapGroup r) = disableInnerLookAhead r
+    go (RStar r) = do
+      r' <- go r
+      return (CRStar r')
+
+    go (RGroup 0 r) = do
+      -- Найти индекс группы в списке:
+      let i = groupIndex (RGroup 0 r)
+      r' <- go r
+      return (CRGroup i r')
+
+    go (RRef n) =
+      return (CRRef n)
+
+    go (RNonCapGroup r) = do
+      r' <- go r
+      return (CRNonCapGroup r')
+
+    go (RLookAhead r) = do
+      -- Запрещаем вложенные look-ahead и группы внутри
+      validateLookAhead r
+      r' <- go r
+      return (CRLookAhead r')
+
+    go (RChar c) =
+      return (CRChar c)
+
+    -- Проверка look-ahead: запрещаем (RLookAhead _) и (RGroup _ _)
+    validateLookAhead :: Regex -> Either RegexError ()
+    validateLookAhead (RLookAhead _) =
+      Left NestedLookAhead
+    validateLookAhead (RGroup _ _) =
+      Left NestedLookAhead
+    validateLookAhead (RRef _) =
+      Left NestedLookAhead
+    validateLookAhead (RStar r) =
+      validateLookAhead r
+    validateLookAhead (RAlt r1 r2) = do
+      validateLookAhead r1
+      validateLookAhead r2
+    validateLookAhead (RConcat rs) =
+      mapM_ validateLookAhead rs
+    validateLookAhead (RNonCapGroup r) =
+      validateLookAhead r
+    validateLookAhead (RChar _) =
+      return ()

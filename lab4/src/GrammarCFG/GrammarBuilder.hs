@@ -68,6 +68,13 @@ addProduction left right = do
 
 go :: CheckedRegex -> Builder Nonterminal
 --------------------------------------------------------------------------------
+-- Одиночный символ
+go (CRChar c) = do
+  nt <- freshNT
+  addProduction nt [T c]
+  return nt
+
+--------------------------------------------------------------------------------
 -- Конкатенация
 go (CRConcat rs) = do
   nt      <- freshNT
@@ -89,21 +96,26 @@ go (CRAlt r1 r2) = do
 
 --------------------------------------------------------------------------------
 -- Группа
-go (CRGroup _ r) = do
-  -- Для «каркасной грамматики» рассматриваем как обычную подстроку
-  go r
+go (CRGroup i r) = do
+  let ntName = "Group" ++ show i
+  st <- get
+  if ntName `elem` map lhs (prods st)
+    then return ntName
+    else do
+      subNT <- go r
+      addProduction ntName [N subNT]
+      return ntName
 
 --------------------------------------------------------------------------------
 -- Ссылка на группу
-go (CRRef _i) = do
-  nt <- freshNT
-  -- Создаём ε-правило
-  addProduction nt []
-  return nt
+go (CRRef i) = do
+  let ntName = "Group" ++ show i
+  addProduction ntName []
+  return ntName
 
 --------------------------------------------------------------------------------
 -- Look-ahead
-go (CRLookAhead _r) = do
+go (CRLookAhead r) = do
   nt <- freshNT
   -- Создаём ε-правило
   addProduction nt []
@@ -124,11 +136,4 @@ go (CRStar r) = do
   addProduction nt []
   -- N -> subNT N
   addProduction nt [N subNT, N nt]
-  return nt
-
---------------------------------------------------------------------------------
--- Одиночный символ
-go (CRChar c) = do
-  nt <- freshNT
-  addProduction nt [T c]
   return nt

@@ -13,6 +13,7 @@ library
 
                      , GrammarCFG.CFG
                      , GrammarCFG.GrammarBuilder
+                     , GrammarCFG.AttributedGrammar
 
   build-depends:       base >=4.7 && <5
                      , containers >=0.6 && <0.8
@@ -37,6 +38,7 @@ test-suite lab3-test-suite
                      , Regex.SyntaxCheckerSpec
 
                      , GrammarCFG.GrammarBuilderSpec
+                     , GrammarCFG.AttributedGrammarSpec
 
 
   default-language:    Haskell2010
@@ -56,5 +58,6 @@ executable Main
 
                      , GrammarCFG.CFG
                      , GrammarCFG.GrammarBuilder
+                     , GrammarCFG.AttributedGrammar
 
   default-language:    Haskell2010

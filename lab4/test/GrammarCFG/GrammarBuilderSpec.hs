@@ -74,10 +74,12 @@ spec = do
     it "builds CFG for a group" $ do
       let regex = CRGroup 1 (CRChar 'b') -- Изменено с RGroup 0 на CRGroup 1
           expectedCfg = CFG
-            { nonterminals = ["N0"]
+            { nonterminals = ["N0", "Group1"]
             , terminals = ['b']
-            , startSymbol = "N0"
-            , productions = [Production "N0" [T 'b']]
+            , startSymbol = "Group1"
+            , productions = [ Production "N0" [T 'b']
+                            , Production "Group1" [N "N0"]
+                            ]
             }
       sameCFG (buildFrameGrammar regex) expectedCfg `shouldBe` True
 
@@ -104,12 +106,12 @@ spec = do
     it "builds CFG for a reference" $ do
       let regex = CRRef 1
           expectedCfg = CFG
-            { nonterminals = ["N0"]
+            { nonterminals = ["Group1"]
             , terminals = []
-            , startSymbol = "N0"
-            , productions = [Production "N0" []]
+            , startSymbol = "Group1"
+            , productions = [Production "Group1" []]
             }
-      sameCFG (buildFrameGrammar regex) expectedCfg `shouldBe` True
+      buildFrameGrammar regex  `shouldBe` expectedCfg
 
 --    it "builds CFG for a nested expression" $ do
 --      let regex = CRConcat [CRGroup 1 (CRAlt (CRChar 'a') (CRChar 'b')), CRStar (CRChar 'c')]

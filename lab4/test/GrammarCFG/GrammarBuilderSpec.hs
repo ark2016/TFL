@@ -4,9 +4,11 @@ module GrammarCFG.GrammarBuilderSpec where
 
 import Test.Hspec
 import GrammarCFG.GrammarBuilder (buildFrameGrammar)
-import Regex.AST
+import Regex.SyntaxChecker (CheckedRegex(..))
+-- import Regex.AST -- Не требуется, используем CheckedRegex
 import GrammarCFG.CFG
 import Data.List (sort)
+import Data.Function (on)
 
 -- | Вспомогательная функция для сравнения двух CFG без учёта порядка элементов.
 sameCFG :: CFG -> CFG -> Bool
@@ -20,7 +22,7 @@ spec :: Spec
 spec = do
   describe "GrammarCFG.GrammarBuilder.buildFrameGrammar" $ do
     it "builds CFG for a single character regex" $ do
-      let regex = RChar 'a'
+      let regex = CRChar 'a'
           expectedCfg = CFG
             { nonterminals = ["N0"]
             , terminals = ['a']
@@ -30,7 +32,7 @@ spec = do
       sameCFG (buildFrameGrammar regex) expectedCfg `shouldBe` True
 
     it "builds CFG for concatenation regex" $ do
-      let regex = RConcat [RChar 'a', RChar 'b']
+      let regex = CRConcat [CRChar 'a', CRChar 'b']
           expectedCfg = CFG
             { nonterminals = ["N0", "N1", "N2"]
             , terminals = ['a', 'b']
@@ -43,7 +45,7 @@ spec = do
       sameCFG (buildFrameGrammar regex) expectedCfg `shouldBe` True
 
     it "builds CFG for alternation regex" $ do
-      let regex = RAlt (RChar 'a') (RChar 'b')
+      let regex = CRAlt (CRChar 'a') (CRChar 'b')
           expectedCfg = CFG
             { nonterminals = ["N0", "N1", "N2"]
             , terminals = ['a', 'b']
@@ -57,7 +59,7 @@ spec = do
       sameCFG (buildFrameGrammar regex) expectedCfg `shouldBe` True
 
     it "builds CFG for a regex with Kleene star" $ do
-      let regex = RStar (RChar 'a')
+      let regex = CRStar (CRChar 'a')
           expectedCfg = CFG
             { nonterminals = ["N0", "N1"]
             , terminals = ['a']
@@ -70,7 +72,7 @@ spec = do
       sameCFG (buildFrameGrammar regex) expectedCfg `shouldBe` True
 
     it "builds CFG for a group" $ do
-      let regex = RGroup 0 (RChar 'b')
+      let regex = CRGroup 1 (CRChar 'b') -- Изменено с RGroup 0 на CRGroup 1
           expectedCfg = CFG
             { nonterminals = ["N0"]
             , terminals = ['b']
@@ -80,7 +82,7 @@ spec = do
       sameCFG (buildFrameGrammar regex) expectedCfg `shouldBe` True
 
     it "builds CFG for a look-ahead assertion" $ do
-      let regex = RLookAhead (RChar 'a')
+      let regex = CRLookAhead (CRChar 'a')
           expectedCfg = CFG
             { nonterminals = ["N0"]
             , terminals = []
@@ -90,7 +92,7 @@ spec = do
       sameCFG (buildFrameGrammar regex) expectedCfg `shouldBe` True
 
     it "builds CFG for a non-capturing group" $ do
-      let regex = RNonCapGroup (RChar 'c')
+      let regex = CRNonCapGroup (CRChar 'c')
           expectedCfg = CFG
             { nonterminals = ["N0"]
             , terminals = ['c']
@@ -100,7 +102,7 @@ spec = do
       sameCFG (buildFrameGrammar regex) expectedCfg `shouldBe` True
 
     it "builds CFG for a reference" $ do
-      let regex = RRef 1
+      let regex = CRRef 1
           expectedCfg = CFG
             { nonterminals = ["N0"]
             , terminals = []
@@ -110,9 +112,9 @@ spec = do
       sameCFG (buildFrameGrammar regex) expectedCfg `shouldBe` True
 
 --    it "builds CFG for a nested expression" $ do
---      let regex = RConcat [RGroup 0 (RAlt (RChar 'a') (RChar 'b')), RStar (RChar 'c')]
+--      let regex = CRConcat [CRGroup 1 (CRAlt (CRChar 'a') (CRChar 'b')), CRStar (CRChar 'c')]
 --          expectedCfg = CFG
---            { nonterminals = ["N0", "N1", "N2", "N3"]
+--            { nonterminals = ["N0", "N1", "N2", "N3", "N4"]
 --            , terminals = ['a', 'b', 'c']
 --            , startSymbol = "N0"
 --            , productions = [ Production "N0" [N "N1", N "N3"]
@@ -120,10 +122,11 @@ spec = do
 --                            , Production "N2" [T 'a']
 --                            , Production "N2" [T 'b']
 --                            , Production "N3" []
---                            , Production "N3" [N "N3", N "N3"] -- Исправлено на [N "N3", N "N3"]?
+--                            , Production "N3" [N "N4", N "N3"]
+--                            , Production "N4" [T 'c']
 --                            ]
 --            }
---      buildFrameGrammar regex `shouldBe` expectedCfg
+--      sameCFG (buildFrameGrammar regex) expectedCfg `shouldBe` True
 
 main :: IO ()
 main = hspec spec

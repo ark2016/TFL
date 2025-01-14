@@ -5,12 +5,19 @@ build-type:          Simple
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Regex.AST
+
+  exposed-modules:
+                       Regex.AST
                      , Regex.Parser
                      , Regex.SyntaxChecker
+
+                     , GrammarCFG.CFG
+                     , GrammarCFG.GrammarBuilder
+
   build-depends:       base >=4.7 && <5
                      , containers >=0.6 && <0.8
                      , parsec >=3.1 && <4
+                     , mtl >=2.2.2 && <2.3
   default-language:    Haskell2010
 
 
@@ -23,10 +30,14 @@ test-suite lab3-test-suite
                      , lab4
                      , containers >=0.6 && <0.8
                      , parsec >=3.1 && <4
+                     , mtl >=2.2.2 && <2.3
   build-tool-depends:  hspec-discover:hspec-discover
   other-modules:       Regex.RegexSpec
                      , Regex.ParserSpec
                      , Regex.SyntaxCheckerSpec
+
+                     , GrammarCFG.GrammarBuilderSpec
+
 
   default-language:    Haskell2010
 
@@ -37,8 +48,13 @@ executable Main
                      , lab4
                      , containers >=0.6 && <0.8
                      , parsec >=3.1 && <4
+                     , mtl >=2.2.2 && <2.3
 
   other-modules:       Regex.AST
                      , Regex.Parser
                      , Regex.SyntaxChecker
+
+                     , GrammarCFG.CFG
+                     , GrammarCFG.GrammarBuilder
+
   default-language:    Haskell2010

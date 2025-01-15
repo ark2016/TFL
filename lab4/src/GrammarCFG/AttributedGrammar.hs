@@ -8,23 +8,27 @@ module GrammarCFG.AttributedGrammar
 
 import GHC.Generics (Generic)
 import Data.List (nub, isPrefixOf)
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Control.Monad.State
 import Control.Applicative ((<|>))
 
 import GrammarCFG.CFG
 import GrammarCFG.GrammarBuilder (buildFrameGrammar)
+
 import Regex.SyntaxChecker (CheckedRegex(..))
 
 --------------------------------------------------------------------------------
--- | Expand the attribute type with a field for the needed next char
+-- | Attribute type with a field for needed next character (for look-ahead)
 data Attrib = Attrib
-  { groupCount  :: Int          -- how many capturing groups so far
-  , refValid    :: Bool         -- are references still valid
-  , neededFirst :: Maybe Char   -- if we have a look-ahead constraint
+  { groupCount  :: Int          -- ^ How many capturing groups so far
+  , refValid    :: Bool         -- ^ Are references still valid
+  , neededFirst :: Maybe Char   -- ^ If we have a look-ahead constraint
   }
   deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
+-- | An attributed production: base Production + inherited & synthesized attributes
 data AttributedProduction = AttributedProduction
   { baseProduction     :: Production
   , inheritedAttrib    :: Attrib
@@ -33,6 +37,7 @@ data AttributedProduction = AttributedProduction
   deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
+-- | An attributed CFG
 data AttributedCFG = AttributedCFG
   { acfgNonterminals :: [Nonterminal]
   , acfgTerminals    :: [Terminal]
@@ -42,7 +47,7 @@ data AttributedCFG = AttributedCFG
   deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
--- The main function
+-- | Build the attributed CFG from a 'CheckedRegex'
 buildAttributedGrammar :: CheckedRegex -> AttributedCFG
 buildAttributedGrammar ast =
   let cfg = buildFrameGrammar ast
@@ -55,13 +60,14 @@ buildAttributedGrammar ast =
        }
 
 --------------------------------------------------------------------------------
+-- | State for attribute assignment
 data AttribState = AttribState
   { currentGroupCount :: Int
   , validReferences   :: Bool
   , pendingLookahead  :: Maybe Char
-  }
-  deriving (Eq, Show)
+  } deriving (Eq, Show)
 
+-- | Initial state for attribute assignment
 initState :: AttribState
 initState = AttribState
   { currentGroupCount = 0
@@ -70,38 +76,50 @@ initState = AttribState
   }
 
 --------------------------------------------------------------------------------
+-- | Assign attributes to a single production
 attributeProduction :: Production -> State AttribState AttributedProduction
 attributeProduction p@(Production lhs rhs) = do
   st <- get
 
-  -- inherited attribute
+  -- Inherited attributes
   let inh = Attrib
         { groupCount  = currentGroupCount st
         , refValid    = validReferences st
         , neededFirst = pendingLookahead  st
         }
 
-  -- normal group counting
-  let newGroupCount = currentGroupCount st + countGroups rhs
-      newRefValid   = checkRefs rhs (currentGroupCount st)
+  -- Count new groups in RHS
+  let newlyFoundGroups = [ i
+                         | N nt <- rhs
+                         , Just i <- [extractGroupNumber nt]
+                         ]
 
-  -- check if this production indicates a lookahead
+  -- Increment groupCount by the number of new groups found
+  let newGroupCount = currentGroupCount st + length newlyFoundGroups
+
+  -- Check references in RHS
+  let newRefValid = checkRefs rhs (currentGroupCount st)
+
+  -- Check if this production indicates a lookahead
   let thisLook = parseLookaheadSymbol lhs rhs
 
-  -- combine with prior
+  -- Combine with prior lookahead constraints
   let combinedLook = thisLook <|> pendingLookahead st
 
-  -- if we have a neededLook, check if 'rhs' starts with it
+  -- If we have a neededLook, verify if 'rhs' starts with it
   let okLook = checkFirstMatchesLookahead rhs combinedLook
 
+  -- Final reference validity
   let finalRefValid = newRefValid && okLook
 
+  -- Synthesized attributes
   let syn = Attrib
         { groupCount  = newGroupCount
         , refValid    = finalRefValid
         , neededFirst = combinedLook
         }
 
+  -- Update the state
   put st
     { currentGroupCount = newGroupCount
     , validReferences   = finalRefValid
@@ -115,41 +133,46 @@ attributeProduction p@(Production lhs rhs) = do
     }
 
 --------------------------------------------------------------------------------
+-- | Count the number of capturing groups in the RHS
 countGroups :: [Symbol] -> Int
 countGroups syms = length [ nt | N nt <- syms, "Group" `isPrefixOf` nt ]
 
+-- | Check the validity of references in the RHS based on total groups so far
 checkRefs :: [Symbol] -> Int -> Bool
 checkRefs syms tot =
-  -- same as your code: check "GroupX"
   all (\num -> (num > 0) && (num <= tot))
       [ num
       | N nt <- syms
-      , Just num <- [extractNumber nt]
+      , Just num <- [extractGroupNumber nt]  -- Replaced extractNumber with extractGroupNumber
       , "Group" `isPrefixOf` nt
       ]
 
-extractNumber :: String -> Maybe Int
-extractNumber nt = case dropWhile (not . (`elem` ['0'..'9'])) nt of
-  [] -> Nothing
-  ds -> case reads ds of
-          [(n,"")] -> Just n
-          _        -> Nothing
+-- | Extract the group number from a Nonterminal named "GroupX"
+extractGroupNumber :: Nonterminal -> Maybe Int
+extractGroupNumber nt =
+  if "Group" `isPrefixOf` nt
+    then case drop 5 nt of
+           [] -> Nothing
+           ds -> case reads ds of
+                   [(n,"")] -> Just n
+                   _        -> Nothing
+    else Nothing
 
 --------------------------------------------------------------------------------
--- If we named the LHS as "LookAhead_c" and the production is Epsilon,
--- we interpret that as lookahead c
+-- | Parse lookahead symbol from the production
+-- If the production is named "LookAhead_c" and has an empty RHS, interpret it as a lookahead for 'c'
 parseLookaheadSymbol :: Nonterminal -> [Symbol] -> Maybe Char
 parseLookaheadSymbol lhs rhs =
   if null rhs && "LookAhead_" `isPrefixOf` lhs
     then Just (last lhs)
     else Nothing
 
+-- | Check if the first symbol matches the needed lookahead character
 checkFirstMatchesLookahead :: [Symbol] -> Maybe Char -> Bool
 checkFirstMatchesLookahead [] Nothing  = True
-checkFirstMatchesLookahead [] (Just _) = True  -- no next symbol, can't confirm
+checkFirstMatchesLookahead [] (Just _) = True  -- No next symbol, can't confirm
 checkFirstMatchesLookahead (T c : _) (Just needed) = (c == needed)
 checkFirstMatchesLookahead (N nt : _) (Just needed) =
-  -- If we want a deep check, we do FIRST(nt).
-  -- We'll just return True for now, or attempt a naive check.
+  -- A naive approach: assume it can produce the needed character
   True
 checkFirstMatchesLookahead _ _ = True

@@ -53,20 +53,32 @@ printCFG :: CFG -> IO ()
 printCFG (CFG nonterms terms start prods) = do
   putStrLn $ "  Start symbol: " ++ start
   putStrLn $ "  Nonterminals: " ++ show nonterms
-  putStrLn $ "  Terminals: " ++ show terms
+  putStrLn $ "  Terminals: " ++ showTerminals terms  -- Изменён вывод терминалов
   putStrLn "  Productions:"
   mapM_ printProd prods
   where
+    -- | Функция для вывода одного производства
     printProd :: Production -> IO ()
     printProd (Production lhs rhs) =
       putStrLn $ "    " ++ lhs ++ " -> " ++
         (if null rhs
-           then "Epsilon"
-           else intercalate " " (map showSymbol rhs))
+           then "Epsilon"  -- Если правая часть пуста, выводим Epsilon
+           else intercalate " " (map showSymbol rhs))  -- Иначе выводим символы через пробел
 
+    -- | Функция для преобразования символа в строку
     showSymbol :: Symbol -> String
-    showSymbol (N nt) = nt
-    showSymbol (T c)  = "'" ++ [c] ++ "'"
+    showSymbol (N nt) = nt  -- Если символ нетерминал, выводим его имя
+    showSymbol (T c)  = "'" ++ [c] ++ "'"  -- Если терминал, выводим его как 'c'
+
+    --------------------------------------------------------------------------------
+    -- | Функция для форматирования списка терминалов
+    --   Преобразует [Char] в строку вида ['a', 'b']
+    showTerminals :: [Terminal] -> String
+    showTerminals ts = "[" ++ intercalate ", " (map showTerminal ts) ++ "]"
+
+    -- | Функция для отображения одного терминала
+    showTerminal :: Terminal -> String
+    showTerminal c = "'" ++ [c] ++ "'"
 
 --------------------------------------------------------------------------------
 -- | Функция для отображения атрибутной КС-грамматики в удобочитаемом виде
@@ -74,22 +86,35 @@ printAttributedCFG :: AttributedCFG -> IO ()
 printAttributedCFG (AttributedCFG nts ts start prods) = do
   putStrLn $ "  Start symbol: " ++ start
   putStrLn $ "  Nonterminals: " ++ show nts
-  putStrLn $ "  Terminals: " ++ show ts
+  putStrLn $ "  Terminals: " ++ showTerminals ts  -- Изменён вывод терминалов
   putStrLn "  Attributed Productions:"
   mapM_ printAttProd prods
   where
+    -- | Функция для вывода одного атрибутированного производства
     printAttProd :: AttributedProduction -> IO ()
     printAttProd (AttributedProduction p inh syn) =
       putStrLn $ "    " ++ lhs p ++ " -> " ++ rhsStr p ++
                  " | Inherited: " ++ show inh ++
                  " | Synthesized: " ++ show syn
       where
+        -- | Функция для получения строки правой части производства
         rhsStr :: Production -> String
         rhsStr (Production _ rhs) =
           if null rhs
-            then "Epsilon"
-            else intercalate " " (map showSymbol rhs)
+            then "Epsilon"  -- Если правая часть пуста, выводим Epsilon
+            else intercalate " " (map showSymbol rhs)  -- Иначе выводим символы через пробел
 
+        -- | Функция для преобразования символа в строку
         showSymbol :: Symbol -> String
-        showSymbol (N nt) = nt
-        showSymbol (T c)  = "'" ++ [c] ++ "'"
+        showSymbol (N nt) = nt  -- Если символ нетерминал, выводим его имя
+        showSymbol (T c)  = "'" ++ [c] ++ "'"  -- Если терминал, выводим его как 'c'
+
+    --------------------------------------------------------------------------------
+    -- | Функция для форматирования списка терминалов
+    --   Преобразует [Char] в строку вида ['a', 'b']
+    showTerminals :: [Terminal] -> String
+    showTerminals ts = "[" ++ intercalate ", " (map showTerminal ts) ++ "]"
+
+    -- | Функция для отображения одного терминала
+    showTerminal :: Terminal -> String
+    showTerminal c = "'" ++ [c] ++ "'"

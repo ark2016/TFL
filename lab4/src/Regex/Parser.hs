@@ -56,6 +56,8 @@ pCaptureGroup = do
   return (RGroup 0 inner)
 
 -- | Парсим базовый элемент без учёта звезды (char, group, ref, look-ahead, etc.)
+--   Оператор <|> в библиотеке Parsec — это комбинатор альтернативы. Он последовательно пытается применить два парсера:
+--   если первый парсер неуспешен, то применяется второй. Если первый парсер сработал, второй парсер не выполняется.
 pBase :: Parser Regex
 pBase =
       pLookAhead
@@ -68,10 +70,10 @@ pBase =
 pStar :: Parser Regex
 pStar = do
   base <- pBase
-  rest <- optionMaybe (char '*')
+  rest <- optionMaybe (char '*') -- Парсим символ `*`, если он есть, иначе возвращаем `Nothing`.
   case rest of
-    Just _  -> return (RStar base)
-    Nothing -> return base
+    Just _  -> return (RStar base) -- Если `*` найден (`Just _`), создаем конструкцию `RStar base` (повторение base).
+    Nothing -> return base -- Если `*` отсутствует (`Nothing`), возвращаем исходное базовое выражение.
 
 --------------------------------------------------------------------------------
 -- Парсер для конкатенации и альтернации
@@ -80,6 +82,7 @@ pStar = do
 --   - «разбор по альтернативам» (A | B)
 --   - внутри каждой альтернативы — последовательность (конкатенация) элементов
 
+-- | основной парсер регулярного выражения.
 pRegex :: Parser Regex
 pRegex = pAlt
 
@@ -87,22 +90,29 @@ pRegex = pAlt
 pAlt :: Parser Regex
 pAlt = do
   first <- pConcat
-  rest  <- many (char '|' >> pConcat)
+  rest  <- many (char '|' >> pConcat) -- Парсим остальные альтернативы, если встречается `|`.
   return $ case rest of
-    [] -> first
-    _  -> foldl RAlt first rest
+    [] -> first -- Если альтернатив нет, возвращаем только `first`.
+    _  -> foldl RAlt first rest -- Если есть альтернативы, собираем их в `RAlt`.
 
 -- | Парсим конкатенацию (несколько подряд идущих кусков без разделителя).
 pConcat :: Parser Regex
 pConcat = do
-  xs <- many1 pStar
+  xs <- many1 pStar -- Парсим последовательность из одного или более элементов.
   -- many1, чтобы хотя бы один элемент схватить
   return $ if length xs == 1
-           then head xs
-           else RConcat xs
+           then head xs -- Если один элемент, возвращаем его как есть.
+           else RConcat xs -- Если несколько элементов, собираем их в `RConcat`.
 
 --------------------------------------------------------------------------------
 -- Экспортируемая функция
 
 parseRegex :: String -> Either ParseError Regex
 parseRegex = parse (pRegex <* eof) "Regex"
+-- <* eof — требует, чтобы парсер успешно дошел до конца строки (eof — "end of file"). Это гарантирует, что вся строка
+-- разобрана целиком.
+-- "Regex" — имя входных данных (используется для сообщений об ошибках).
+-- parseRegex возвращает результат вызова parse, который будет:
+--
+-- Right regex, если разбор успешен (где regex — абстрактное синтаксическое дерево регулярного выражения).
+-- Left parseError, если возникла ошибка при разборе.

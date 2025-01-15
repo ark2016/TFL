@@ -1,7 +1,7 @@
 module Regex.SyntaxChecker
   ( checkRegex
   , CheckedRegex(..)
-  , RegexError(..) -- Export the RegexError type and its constructors
+  , RegexError(..) -- Экспорт типа RegexError и его конструкторов
 ) where
 
 import Regex.AST
@@ -11,14 +11,14 @@ import qualified Data.Set as Set
 --------------------------------------------------------------------------------
 -- | Промежуточное дерево, где группы уже пронумерованы корректно
 data CheckedRegex
-  = CRConcat [CheckedRegex]
-  | CRAlt CheckedRegex CheckedRegex
-  | CRGroup Int CheckedRegex    -- Номер группы
-  | CRRef   Int
-  | CRLookAhead CheckedRegex
-  | CRNonCapGroup CheckedRegex
-  | CRStar CheckedRegex
-  | CRChar Char
+  = CRConcat [CheckedRegex]         -- Конкатенация
+  | CRAlt CheckedRegex CheckedRegex -- Альтернатива
+  | CRGroup Int CheckedRegex        -- Номер группы
+  | CRRef   Int                     -- Ссылка на группу по номеру
+  | CRLookAhead CheckedRegex        -- Look-ahead
+  | CRNonCapGroup CheckedRegex      -- незахваченная группа
+  | CRStar CheckedRegex             -- Повторение (*)
+  | CRChar Char                     -- Символ
   deriving (Eq, Show)
 
 --------------------------------------------------------------------------------
@@ -49,10 +49,12 @@ checkRegex ast = do
 
   -- 3. Проверяем все ссылки
   --    Ссылка (RRef n) корректна, если 1 <= n <= groupCount
+  -- Возвращает новое множество, содержащее только элементы, удовлетворяющие условию.
   let invalidRefs = Set.filter (\r -> r < 1 || r > groupCount) refsSet
   if not (Set.null invalidRefs)
     then Left (InvalidGroupRef (Set.findMin invalidRefs))
-    else Right ()
+    else Right () -- результат типа Either RegexError (), который используется для обозначения успешного выполнения
+                  -- проверки без ошибки.
 
   -- 4. Строим CheckedRegex
   buildChecked ast groupsList
@@ -71,38 +73,39 @@ collectGroupsAndRefs :: Regex
 collectGroupsAndRefs (RConcat rs) acc =
   -- св развёртке foldl, аккуратно обходим каждый r
   foldl
-    (\(grps, refs) r ->
-       let (g2, r2) = collectGroupsAndRefs r grps
-       in (g2, refs `Set.union` r2))
-    (acc, Set.empty)
-    rs
+    (\(grps, refs) r ->  -- Обработчик каждого узла r
+       let (g2, r2) = collectGroupsAndRefs r grps -- Рекурсивный вызов на поддерево
+       in (g2, refs `Set.union` r2)) -- Объединяем ссылки
+    (acc, Set.empty) -- Начальные значения: список групп и пустое множество ссылок
+    rs -- Список дочерних узлов
 
 collectGroupsAndRefs (RAlt r1 r2) acc =
-  let (g1, s1) = collectGroupsAndRefs r1 acc
-      (g2, s2) = collectGroupsAndRefs r2 g1
-  in (g2, s1 `Set.union` s2)
+  let (g1, s1) = collectGroupsAndRefs r1 acc -- Обход первого подвыражения
+      (g2, s2) = collectGroupsAndRefs r2 g1 -- Обход второго подвыражения
+  in (g2, s1 `Set.union` s2) -- Объединяем группы и ссылки
 
 collectGroupsAndRefs (RStar r) acc =
-  collectGroupsAndRefs r acc
+  collectGroupsAndRefs r acc -- Обход вложенного выражения
 
 collectGroupsAndRefs (RGroup 0 r) acc =
   -- добавляем эту группу (RGroup 0 r) в конец списка
   let acc' = acc ++ [RGroup 0 r]
-      (g1, s1) = collectGroupsAndRefs r acc'
+      (g1, s1) = collectGroupsAndRefs r acc' -- Рекурсивно обходим вложенное выражение
   in (g1, s1)
 
 collectGroupsAndRefs (RRef n) acc =
-  (acc, Set.singleton n)
+  (acc, Set.singleton n) -- Добавляем ссылку на группу в множество
+  -- Set.singleton — это функция из модуля Data.Set, которая создает множество с единственным элементом.
 
 collectGroupsAndRefs (RLookAhead r) acc =
-  let (g1, s1) = collectGroupsAndRefs r acc
+  let (g1, s1) = collectGroupsAndRefs r acc -- Обходим подвыражение `r`
   in (g1, s1)
 
 collectGroupsAndRefs (RNonCapGroup r) acc =
-  collectGroupsAndRefs r acc
+  collectGroupsAndRefs r acc -- Обходим подвыражение `r`
 
 collectGroupsAndRefs (RChar _) acc =
-  (acc, Set.empty)
+  (acc, Set.empty) -- Символ не добавляет групп или ссылок
 
 --------------------------------------------------------------------------------
 -- | buildChecked
@@ -115,10 +118,11 @@ buildChecked ast groupsList = go ast
     -- найдем индекс данной группы (RGroup 0 r) в списке groupsList
     groupIndex :: Regex -> Int
     groupIndex g =
-      case lookup g (zip groupsList [1..]) of
+      case lookup g (zip groupsList [1..]) of -- создание пары (группа, индекс) + поиск индекса группы
         Just i  -> i
         Nothing -> error "Impossible: group not found"
-
+    --mapM возвращает список результатов m [b].
+    --mapM_ игнорирует результаты и возвращает m ().
     go (RConcat rs) = do
       rs' <- mapM go rs
       return (CRConcat rs')
@@ -167,6 +171,10 @@ buildChecked ast groupsList = go ast
     validateLookAhead (RAlt r1 r2) = do
       validateLookAhead r1
       validateLookAhead r2
+    -- mapM_ — это версия mapM, которая игнорирует возвращаемый результат и используется, когда нам важен только эффект
+    -- выполнения функций.
+    -- Если хотя бы одно выражение вызывает ошибку (Left NestedLookAhead), весь результат будет Left.
+    -- Если все вызовы успешны (Right ()), результат — Right ().
     validateLookAhead (RConcat rs) =
       mapM_ validateLookAhead rs
     validateLookAhead (RNonCapGroup r) =

@@ -19,35 +19,39 @@ import GrammarCFG.GrammarBuilder (buildFrameGrammar)
 import Regex.SyntaxChecker (CheckedRegex(..))
 
 --------------------------------------------------------------------------------
--- | Attribute type with a field for needed next character (for look-ahead)
+-- | Тип атрибута с полем для необходимого следующего символа (для просмотра вперед)
+--   Также отслеживается количество захватывающих групп и валидность ссылок на группы.
 data Attrib = Attrib
-  { groupCount  :: Int          -- ^ How many capturing groups so far
-  , refValid    :: Bool         -- ^ Are references still valid
-  , neededFirst :: Maybe Char   -- ^ If we have a look-ahead constraint
+  { groupCount  :: Int          -- ^ Сколько групп захвата было обнаружено до текущего момента.
+  , refValid    :: Bool         -- ^ Валидны ли ссылки на группы до текущего момента.
+  , neededFirst :: Maybe Char   -- ^ Требуемый следующий символ из-за ограничения look-ahead.
   }
   deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
--- | An attributed production: base Production + inherited & synthesized attributes
+-- | Правила атрибутов: базовое Правило + унаследованные и синтезированные атрибуты.
+--   Унаследованные атрибуты передаются из контекста, синтезированные атрибуты генерируются в результате.
 data AttributedProduction = AttributedProduction
-  { baseProduction     :: Production
-  , inheritedAttrib    :: Attrib
-  , synthesizedAttrib  :: Attrib
+  { baseProduction     :: Production  -- ^ Базовое Правило из CFG.
+  , inheritedAttrib    :: Attrib      -- ^ Унаследованные атрибуты для данного Правила.
+  , synthesizedAttrib  :: Attrib      -- ^ Синтезированные атрибуты после обработки Правила.
   }
   deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
--- | An attributed CFG
+-- | Атрибутированная контекстно-свободная грамматика.
+--   Содержит список нетерминалов, терминалов, начальный символ и список атрибутированных Правил.
 data AttributedCFG = AttributedCFG
-  { acfgNonterminals :: [Nonterminal]
-  , acfgTerminals    :: [Terminal]
-  , acfgStartSymbol  :: Nonterminal
-  , acfgProductions  :: [AttributedProduction]
+  { acfgNonterminals :: [Nonterminal]             -- ^ Список нетерминалов грамматики.
+  , acfgTerminals    :: [Terminal]                -- ^ Список терминалов грамматики.
+  , acfgStartSymbol  :: Nonterminal               -- ^ Начальный символ грамматики.
+  , acfgProductions  :: [AttributedProduction]    -- ^ Список атрибутированных Правил.
   }
   deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
--- | Build the attributed CFG from a 'CheckedRegex'
+-- | Функция для построения атрибутированной грамматики из проверенного регулярного выражения.
+--   Она сначала строит базовую CFG, затем присваивает атрибуты каждому Правилу.
 buildAttributedGrammar :: CheckedRegex -> AttributedCFG
 buildAttributedGrammar ast =
   let cfg = buildFrameGrammar ast
@@ -60,14 +64,15 @@ buildAttributedGrammar ast =
        }
 
 --------------------------------------------------------------------------------
--- | State for attribute assignment
+-- | Состояние для присваивания атрибутов.
+--   Отслеживает текущее количество групп, валидность ссылок и требуемый следующий символ.
 data AttribState = AttribState
-  { currentGroupCount :: Int
-  , validReferences   :: Bool
-  , pendingLookahead  :: Maybe Char
+  { currentGroupCount :: Int           -- ^ Текущее количество обнаруженных групп захвата.
+  , validReferences   :: Bool          -- ^ Валидны ли ссылки на группы.
+  , pendingLookahead  :: Maybe Char    -- ^ Требуемый следующий символ из-за ограничения look-ahead.
   } deriving (Eq, Show)
 
--- | Initial state for attribute assignment
+-- | Начальное состояние для присваивания атрибутов.
 initState :: AttribState
 initState = AttribState
   { currentGroupCount = 0
@@ -76,56 +81,58 @@ initState = AttribState
   }
 
 --------------------------------------------------------------------------------
--- | Assign attributes to a single production
+-- | Функция для присваивания атрибутов одному Правилу.
+--   Она обновляет состояние атрибутов на основе текущего Правила.
 attributeProduction :: Production -> State AttribState AttributedProduction
 attributeProduction p@(Production lhs rhs) = do
   st <- get
 
-  -- Inherited attributes
+  -- Унаследованные атрибуты: копируем текущие атрибуты из состояния.
   let inh = Attrib
         { groupCount  = currentGroupCount st
         , refValid    = validReferences st
         , neededFirst = pendingLookahead  st
         }
 
-  -- Count new groups in RHS
+  -- Определяем новые группы захвата в правой части Правила.
   let newlyFoundGroups = [ i
                          | N nt <- rhs
                          , Just i <- [extractGroupNumber nt]
                          ]
 
-  -- Increment groupCount by the number of new groups found
+  -- Обновляем счетчик групп захвата.
   let newGroupCount = currentGroupCount st + length newlyFoundGroups
 
-  -- Check references in RHS
+  -- Проверяем валидность ссылок на группы в правой части Правила.
   let newRefValid = checkRefs rhs (currentGroupCount st)
 
-  -- Check if this production indicates a lookahead
+  -- Проверяем, является ли текущее Правило ограничением look-ahead.
   let thisLook = parseLookaheadSymbol lhs rhs
 
-  -- Combine with prior lookahead constraints
+  -- Объединяем текущие ограничения look-ahead с предыдущими.
   let combinedLook = thisLook <|> pendingLookahead st
 
-  -- If we have a neededLook, verify if 'rhs' starts with it
+  -- Если есть требование look-ahead, проверяем соответствие первого символа.
   let okLook = checkFirstMatchesLookahead rhs combinedLook
 
-  -- Final reference validity
+  -- Определяем окончательную валидность ссылок с учетом ограничений look-ahead.
   let finalRefValid = newRefValid && okLook
 
-  -- Synthesized attributes
+  -- Синтезированные атрибуты: обновленные значения на основе текущего Правила.
   let syn = Attrib
         { groupCount  = newGroupCount
         , refValid    = finalRefValid
         , neededFirst = combinedLook
         }
 
-  -- Update the state
+  -- Обновляем состояние атрибутов.
   put st
     { currentGroupCount = newGroupCount
     , validReferences   = finalRefValid
     , pendingLookahead  = combinedLook
     }
 
+  -- Возвращаем атрибутированное Правило.
   return AttributedProduction
     { baseProduction     = p
     , inheritedAttrib    = inh
@@ -133,21 +140,25 @@ attributeProduction p@(Production lhs rhs) = do
     }
 
 --------------------------------------------------------------------------------
--- | Count the number of capturing groups in the RHS
+-- | Функция для подсчета количества новых захватывающих групп в правой части Правила.
 countGroups :: [Symbol] -> Int
 countGroups syms = length [ nt | N nt <- syms, "Group" `isPrefixOf` nt ]
 
--- | Check the validity of references in the RHS based on total groups so far
+--------------------------------------------------------------------------------
+-- | Функция для проверки валидности ссылок на группы в правой части Правила.
+--   Проверяет, что номера групп находятся в допустимом диапазоне.
 checkRefs :: [Symbol] -> Int -> Bool
 checkRefs syms tot =
   all (\num -> (num > 0) && (num <= tot))
       [ num
       | N nt <- syms
-      , Just num <- [extractGroupNumber nt]  -- Replaced extractNumber with extractGroupNumber
+      , Just num <- [extractGroupNumber nt]  -- Используем extractGroupNumber вместо extractNumber
       , "Group" `isPrefixOf` nt
       ]
 
--- | Extract the group number from a Nonterminal named "GroupX"
+--------------------------------------------------------------------------------
+-- | Функция для извлечения номера группы из нетерминала вида "GroupX",
+--   где X — номер группы.
 extractGroupNumber :: Nonterminal -> Maybe Int
 extractGroupNumber nt =
   if "Group" `isPrefixOf` nt
@@ -159,20 +170,21 @@ extractGroupNumber nt =
     else Nothing
 
 --------------------------------------------------------------------------------
--- | Parse lookahead symbol from the production
--- If the production is named "LookAhead_c" and has an empty RHS, interpret it as a lookahead for 'c'
+-- | Функция для определения, представляет ли текущее Правило ограничение look-ahead.
+--   Если имя нетерминала начинается с "LookAhead_" и правая часть пустая, то это ограничение.
 parseLookaheadSymbol :: Nonterminal -> [Symbol] -> Maybe Char
 parseLookaheadSymbol lhs rhs =
   if null rhs && "LookAhead_" `isPrefixOf` lhs
-    then Just (last lhs)
+    then Just (last lhs)  -- Извлекаем последний символ как требуемый.
     else Nothing
 
--- | Check if the first symbol matches the needed lookahead character
+--------------------------------------------------------------------------------
+-- | Функция для проверки соответствия первого символа правой части требуемому символу из look-ahead.
 checkFirstMatchesLookahead :: [Symbol] -> Maybe Char -> Bool
 checkFirstMatchesLookahead [] Nothing  = True
-checkFirstMatchesLookahead [] (Just _) = True  -- No next symbol, can't confirm
-checkFirstMatchesLookahead (T c : _) (Just needed) = (c == needed)
+checkFirstMatchesLookahead [] (Just _) = True  -- Нет следующего символа, проверку пропускаем.
+checkFirstMatchesLookahead (T c : _) (Just needed) = (c == needed)  -- Сравниваем терминал.
 checkFirstMatchesLookahead (N nt : _) (Just needed) =
-  -- A naive approach: assume it can produce the needed character
+  -- предполагаем, что нетерминал может генерировать нужный символ.
   True
 checkFirstMatchesLookahead _ _ = True

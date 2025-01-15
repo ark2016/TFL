@@ -14,17 +14,23 @@ import qualified Data.Set as Set
 import Data.List (nub)
 
 --------------------------------------------------------------------------------
--- | Schematic function to expand references by substituting the sub-tree
---   from CRGroup i. We store a map from i -> sub-tree for each CRGroup i.
---   We also store a 'visited' set to detect recursion.
+-- | функция для расширения ссылок путем замены поддерева
+-- из CRGroup i. Мы сохраняем map из i -> поддерево для каждой CRGroup i.
+-- Мы также сохраняем «посещенный» set для обнаружения рекурсии.
+--
+-- State используется для хранения глобального состояния:
+--
+-- get — получает текущее состояние (gmap, visited).
+-- put — обновляет состояние.
+-- modify — изменяет состояние частично (например, удаляет элементы).
 
 expandReferences :: CheckedRegex
                  -> State (Map Int CheckedRegex, Set Int)
                            CheckedRegex
 expandReferences regex = case regex of
   CRConcat rs -> do
-    rs' <- mapM expandReferences rs
-    return (CRConcat rs')
+    rs' <- mapM expandReferences rs -- Рекурсивно разворачиваем все элементы списка
+    return (CRConcat rs') -- Собираем результаты в новый узел CRConcat rs'
 
   CRAlt r1 r2 -> do
     r1' <- expandReferences r1
@@ -32,11 +38,11 @@ expandReferences regex = case regex of
     return (CRAlt r1' r2')
 
   CRGroup i sub -> do
-    -- Store sub in groupMap
-    (gmap, visited) <- get
-    let gmap' = Map.insert i sub gmap
-    put (gmap', visited)
-    -- Expand the sub
+    -- Сохранить подгруппу в groupMap
+    (gmap, visited) <- get -- Получаем текущее состояние (gmap, visited) с помощью get
+    let gmap' = Map.insert i sub gmap -- Добавляем группу CRGroup i sub в gmap с помощью Map.insert
+    put (gmap', visited) -- Функция put — это часть монады State, которая обновляет состояние.
+    -- Развернуть sub
     sub' <- expandReferences sub
     return (CRGroup i sub')
 
@@ -44,15 +50,15 @@ expandReferences regex = case regex of
     (gmap, visited) <- get
     if i `Set.member` visited
       then
-        -- We hit recursion. Keep it as CRRef i to avoid infinite expansion.
+        -- Мы попали в рекурсию. Оставим как CRRef i, чтобы избежать бесконечного расширения.
         return (CRRef i)
       else case Map.lookup i gmap of
-             Nothing -> return (CRRef i) -- No known group => keep as is
+             Nothing -> return (CRRef i) -- Группа неизвестна => оставить как есть
              Just subTree -> do
-               -- Mark that we're now visiting i
+               -- Отметим, что мы сейчас посещаем i
                put (gmap, Set.insert i visited)
                expanded <- expandReferences subTree
-               -- After expansion, remove i from visited to allow re-entry if needed
+               -- После расширения удалим i из visited, чтобы разрешить повторный вход при необходимости.
                modify (\(gm, vs) -> (gm, Set.delete i vs))
                return expanded
 
@@ -73,18 +79,23 @@ expandReferences regex = case regex of
 --------------------------------------------------------------------------------
 -- | Public function: buildFrameGrammar
 --
--- Given a validated AST of a regular expression (`CheckedRegex`),
--- create a CFG that recognizes the "frame" of the regular expression,
--- ignoring look-ahead assertions and capturing/back-references,
--- transforming them into new nonterminals.
+-- Имея проверенное AST регулярного выражения (`CheckedRegex`),
+-- создаем CFG, который распознает "каркас" регулярного выражения,
+-- игнорируя утверждения о просмотре вперед и захват/обратные ссылки,
+-- преобразуя их в новые нетерминалы.
 
 buildFrameGrammar :: CheckedRegex -> CFG
 buildFrameGrammar ast =
-  let initMap = Map.empty
-      initSet = Set.empty
+  let initMap = Map.empty -- Изначально словарь ссылок на группы пустой
+      initSet = Set.empty -- Множество посещенных групп также пустое
+      -- expandReferences ast — развертывает все ссылки CRRef i в их соответствующие поддеревья CRGroup i.
+      -- runState запускает вычисление в монаде State с начальными значениями (initMap, initSet).
+      -- Возвращается:
+      -- expandedAst — дерево регулярного выражения со встроенными ссылками.
+      -- _finalState — финальное состояние (игнорируется здесь).
       (expandedAst, _finalState) = runState (expandReferences ast) (initMap, initSet)
-      -- Now we have a tree with references inlined
-      initSt = BuildState 0 []
+      -- Теперь у нас есть дерево со встроенными ссылками.
+      initSt = BuildState 0 [] -- Начальный счетчик для нумерации нетерминалов
       (startN, endSt) = runState (go expandedAst) initSt
       allProds        = prods endSt
       allNTs          = nub (map lhs allProds)
@@ -104,6 +115,7 @@ data BuildState = BuildState
   }
 
 -- | The builder monad: State BuildState
+-- Эта строка определяет синоним типа Builder a, который представляет собой монаду состояния State BuildState a.
 type Builder a = State BuildState a
 
 --------------------------------------------------------------------------------
@@ -124,8 +136,8 @@ addProduction left right = do
   put st { prods = prods st ++ [p] }
 
 --------------------------------------------------------------------------------
--- | Main recursion that traverses the CheckedRegex AST and generates CFG productions.
--- Returns the name of the nonterminal that recognizes the given sub-regular expression.
+-- | Основная рекурсия, которая обходит AST CheckedRegex и генерирует правила CFG.
+-- Возвращает имя нетерминала, который распознает заданное подрегулярное выражение.
 
 go :: CheckedRegex -> Builder Nonterminal
 --------------------------------------------------------------------------------
@@ -168,9 +180,10 @@ go (CRGroup i r) = do
       return ntName
 
 --------------------------------------------------------------------------------
--- Reference to a Group
--- Since we've already expanded references, this case should ideally not occur.
--- However, to handle any remaining cases, we map it to an empty production.
+-- Ссылка на группу
+-- Поскольку мы уже расширили ссылки, этот случай в идеале не должен возникать.
+-- Однако для обработки оставшихся случаев мы сопоставляем его с пустым правилом.
+
 go (CRRef i) = do
   let ntName = "Group" ++ show i
   addProduction ntName []
@@ -179,14 +192,14 @@ go (CRRef i) = do
 --------------------------------------------------------------------------------
 -- Look-ahead Assertion
 go (CRLookAhead (CRChar c)) = do
-  let nt = "LookAhead_" ++ [c]  -- Store the character in the name
+  let nt = "LookAhead_" ++ [c]  -- храним символ в имени
   addProduction nt []
   return nt
 
 --------------------------------------------------------------------------------
 -- Non-Capturing Group
 go (CRNonCapGroup r) = do
-  -- Treat as a regular substring
+  -- Рассматривать как обычную подстроку
   go r
 
 --------------------------------------------------------------------------------

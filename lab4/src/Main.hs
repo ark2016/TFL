@@ -19,8 +19,9 @@ main = do
   -- let input = "((?1)a|b)"
   --let input = "(?1)(a|b)*(?1)"
   -- let input = "(aa(?1))"
-  -- let input = "(a(?1)a|b)"  -- простой пример (регекс для языка {a^n c b^n | n ∈ N})
-  let input = "((?=a)(a|b))"
+  -- let input = "(a(?1)b|c)"  -- простой пример (регекс для языка {a^n c b^n | n ∈ N})
+  --let input = "(?=a)(a|b)"
+  input <- getLine
   putStrLn $ "Input regex: " ++ input
 
   -- Парсинг

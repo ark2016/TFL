@@ -115,11 +115,11 @@ go (CRRef i) = do
 
 --------------------------------------------------------------------------------
 -- Look-ahead
-go (CRLookAhead r) = do
-  nt <- freshNT
-  -- Создаём ε-правило
+go (CRLookAhead (CRChar c)) = do
+  let nt = "LookAhead_" ++ [c]  -- store the char in the name
   addProduction nt []
   return nt
+
 
 --------------------------------------------------------------------------------
 -- Незахватывающая группа

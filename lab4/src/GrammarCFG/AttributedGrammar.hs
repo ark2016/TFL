@@ -9,26 +9,22 @@ module GrammarCFG.AttributedGrammar
 import GHC.Generics (Generic)
 import Data.List (nub, isPrefixOf)
 import Control.Monad.State
+import Control.Applicative ((<|>))
 
 import GrammarCFG.CFG
 import GrammarCFG.GrammarBuilder (buildFrameGrammar)
-import Regex.SyntaxChecker (CheckedRegex(..), RegexError(..))
+import Regex.SyntaxChecker (CheckedRegex(..))
 
 --------------------------------------------------------------------------------
--- | Тип атрибутов. Здесь мы можем хранить любую информацию, необходимую для
---   проверки ограничений синтаксиса регулярного выражения.
---   Например:
---     - Количество групп
---     - Валидность ссылок на группы
---     - Информация о вложенных конструкциях
+-- | Expand the attribute type with a field for the needed next char
 data Attrib = Attrib
-  { groupCount :: Int   -- Количество захватывающих групп до текущего правила
-  , refValid   :: Bool  -- Валидность ссылок в текущем правиле
+  { groupCount  :: Int          -- how many capturing groups so far
+  , refValid    :: Bool         -- are references still valid
+  , neededFirst :: Maybe Char   -- if we have a look-ahead constraint
   }
   deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
--- | Атрибутированное правило.
 data AttributedProduction = AttributedProduction
   { baseProduction     :: Production
   , inheritedAttrib    :: Attrib
@@ -37,7 +33,6 @@ data AttributedProduction = AttributedProduction
   deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
--- | Атрибутная контекстно-свободная грамматика.
 data AttributedCFG = AttributedCFG
   { acfgNonterminals :: [Nonterminal]
   , acfgTerminals    :: [Terminal]
@@ -47,91 +42,114 @@ data AttributedCFG = AttributedCFG
   deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
--- | Построение атрибутной грамматики из `CheckedRegex`.
+-- The main function
 buildAttributedGrammar :: CheckedRegex -> AttributedCFG
-buildAttributedGrammar goodAst =
-    let cfg = buildFrameGrammar goodAst
-        attProds = evalState (mapM attributeProduction (productions cfg)) initialAttribState
-    in AttributedCFG
-        { acfgNonterminals = nonterminals cfg
-        , acfgTerminals    = terminals cfg
-        , acfgStartSymbol  = startSymbol cfg
-        , acfgProductions  = attProds
-        }
+buildAttributedGrammar ast =
+  let cfg = buildFrameGrammar ast
+      attProds = evalState (mapM attributeProduction (productions cfg)) initState
+  in AttributedCFG
+       { acfgNonterminals = nonterminals cfg
+       , acfgTerminals    = terminals cfg
+       , acfgStartSymbol  = startSymbol cfg
+       , acfgProductions  = attProds
+       }
 
 --------------------------------------------------------------------------------
--- | Состояние для построения атрибутов.
 data AttribState = AttribState
-  { currentGroupCount :: Int    -- Текущее количество групп
-  , validReferences   :: Bool   -- Флаг валидности ссылок
+  { currentGroupCount :: Int
+  , validReferences   :: Bool
+  , pendingLookahead  :: Maybe Char
   }
   deriving (Eq, Show)
 
--- | Начальное состояние атрибутного прохода.
-initialAttribState :: AttribState
-initialAttribState = AttribState
+initState :: AttribState
+initState = AttribState
   { currentGroupCount = 0
   , validReferences   = True
+  , pendingLookahead  = Nothing
   }
 
 --------------------------------------------------------------------------------
--- | Функция для присвоения атрибутов одному правилу.
 attributeProduction :: Production -> State AttribState AttributedProduction
 attributeProduction p@(Production lhs rhs) = do
   st <- get
-  let inherited = Attrib
-        { groupCount = currentGroupCount st
-        , refValid   = validReferences st
+
+  -- inherited attribute
+  let inh = Attrib
+        { groupCount  = currentGroupCount st
+        , refValid    = validReferences st
+        , neededFirst = pendingLookahead  st
         }
 
-  -- Логика атрибутов:
-  -- Если правило содержит группу, увеличиваем count
-  -- Если правило содержит ссылку, проверяем валидность
+  -- normal group counting
   let newGroupCount = currentGroupCount st + countGroups rhs
       newRefValid   = checkRefs rhs (currentGroupCount st)
 
-  let synthesized = Attrib
-        { groupCount = newGroupCount
-        , refValid   = newRefValid
+  -- check if this production indicates a lookahead
+  let thisLook = parseLookaheadSymbol lhs rhs
+
+  -- combine with prior
+  let combinedLook = thisLook <|> pendingLookahead st
+
+  -- if we have a neededLook, check if 'rhs' starts with it
+  let okLook = checkFirstMatchesLookahead rhs combinedLook
+
+  let finalRefValid = newRefValid && okLook
+
+  let syn = Attrib
+        { groupCount  = newGroupCount
+        , refValid    = finalRefValid
+        , neededFirst = combinedLook
         }
 
-  -- Обновляем состояние
-  put st { currentGroupCount = newGroupCount, validReferences = newRefValid }
+  put st
+    { currentGroupCount = newGroupCount
+    , validReferences   = finalRefValid
+    , pendingLookahead  = combinedLook
+    }
 
   return AttributedProduction
     { baseProduction     = p
-    , inheritedAttrib    = inherited
-    , synthesizedAttrib  = synthesized
+    , inheritedAttrib    = inh
+    , synthesizedAttrib  = syn
     }
 
 --------------------------------------------------------------------------------
--- | Функция для подсчёта количества групп в правой части правила.
 countGroups :: [Symbol] -> Int
-countGroups syms = length [ nt | N nt <- syms, isGroup nt ]
+countGroups syms = length [ nt | N nt <- syms, "Group" `isPrefixOf` nt ]
 
--- | Определение, является ли нетерминал группой
-isGroup :: Nonterminal -> Bool
-isGroup nt = "Group" `isPrefixOf` nt
-
--- | Функция для проверки валидности ссылок на группы.
---   Здесь предполагается, что ссылки имеют формат "Group<num>", например, "Group1", "Group2".
 checkRefs :: [Symbol] -> Int -> Bool
-checkRefs syms totalGroups =
-  all (\ num -> num > 0 && num <= totalGroups)
-      [ num | N nt <- syms, Just num <- [extractNumber nt], isGroup nt ]
+checkRefs syms tot =
+  -- same as your code: check "GroupX"
+  all (\num -> (num > 0) && (num <= tot))
+      [ num
+      | N nt <- syms
+      , Just num <- [extractNumber nt]
+      , "Group" `isPrefixOf` nt
+      ]
 
--- | Вспомогательная функция для извлечения числа из имени нетерминала.
-extractNumber :: Nonterminal -> Maybe Int
-extractNumber nt =
-  case dropWhile (not . (`elem` ['0'..'9'])) nt of
-    []     -> Nothing
-    digits -> case reads digits of
-                [(n, "")] -> Just n
-                _         -> Nothing
+extractNumber :: String -> Maybe Int
+extractNumber nt = case dropWhile (not . (`elem` ['0'..'9'])) nt of
+  [] -> Nothing
+  ds -> case reads ds of
+          [(n,"")] -> Just n
+          _        -> Nothing
 
--- | Вспомогательная функция для извлечения номера группы.
-extractGroupNumber :: Nonterminal -> Int
-extractGroupNumber nt =
-  case extractNumber nt of
-    Just n  -> n
-    Nothing -> 0 -- по умолчанию, если не найдено
+--------------------------------------------------------------------------------
+-- If we named the LHS as "LookAhead_c" and the production is Epsilon,
+-- we interpret that as lookahead c
+parseLookaheadSymbol :: Nonterminal -> [Symbol] -> Maybe Char
+parseLookaheadSymbol lhs rhs =
+  if null rhs && "LookAhead_" `isPrefixOf` lhs
+    then Just (last lhs)
+    else Nothing
+
+checkFirstMatchesLookahead :: [Symbol] -> Maybe Char -> Bool
+checkFirstMatchesLookahead [] Nothing  = True
+checkFirstMatchesLookahead [] (Just _) = True  -- no next symbol, can't confirm
+checkFirstMatchesLookahead (T c : _) (Just needed) = (c == needed)
+checkFirstMatchesLookahead (N nt : _) (Just needed) =
+  -- If we want a deep check, we do FIRST(nt).
+  -- We'll just return True for now, or attempt a naive check.
+  True
+checkFirstMatchesLookahead _ _ = True

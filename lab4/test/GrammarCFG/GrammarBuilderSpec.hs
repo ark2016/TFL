@@ -113,22 +113,6 @@ spec = do
             }
       buildFrameGrammar regex  `shouldBe` expectedCfg
 
---    it "builds CFG for a nested expression" $ do
---      let regex = CRConcat [CRGroup 1 (CRAlt (CRChar 'a') (CRChar 'b')), CRStar (CRChar 'c')]
---          expectedCfg = CFG
---            { nonterminals = ["N0", "N1", "N2", "N3", "N4"]
---            , terminals = ['a', 'b', 'c']
---            , startSymbol = "N0"
---            , productions = [ Production "N0" [N "N1", N "N3"]
---                            , Production "N1" [N "N2"]
---                            , Production "N2" [T 'a']
---                            , Production "N2" [T 'b']
---                            , Production "N3" []
---                            , Production "N3" [N "N4", N "N3"]
---                            , Production "N4" [T 'c']
---                            ]
---            }
---      sameCFG (buildFrameGrammar regex) expectedCfg `shouldBe` True
 
 main :: IO ()
 main = hspec spec

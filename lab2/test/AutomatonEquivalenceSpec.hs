@@ -71,4 +71,4 @@ spec = do
             initialState = 0,
             acceptingStates = [1]
           }
-      areAutomataEquivalent dfa1 dfa2 `shouldBe` Left "Alphabets are different"
+      areAutomataEquivalent dfa1 dfa2 `shouldBe` Left "ab"
